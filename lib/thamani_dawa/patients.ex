@@ -5,8 +5,8 @@ defmodule ThamaniDawa.Patients do
   """
 
   import Ecto.Query, warn: false
-  alias ThamaniDawa.Repo
   alias ThamaniDawa.Patients.Patient
+  alias ThamaniDawa.Repo
 
   @doc "Lists an organization's patients."
   def list_patients(organization_id) do

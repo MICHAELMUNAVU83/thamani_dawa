@@ -6,8 +6,8 @@ defmodule ThamaniDawa.Accounts do
   """
 
   import Ecto.Query, warn: false
+  alias ThamaniDawa.Accounts.{User, UserNotifier, UserToken}
   alias ThamaniDawa.Repo
-  alias ThamaniDawa.Accounts.{User, UserToken, UserNotifier}
   alias ThamaniDawa.Sites.Site
 
   ## Users

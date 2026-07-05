@@ -20,7 +20,10 @@ defmodule ThamaniDawa.BatchesFixtures do
   @doc "Generates a fresh, GS1-checksum-valid GTIN-14 for test fixtures."
   def unique_gtin do
     base =
-      System.unique_integer([:positive]) |> Integer.to_string() |> String.pad_leading(13, "0")
+      [:positive]
+      |> System.unique_integer()
+      |> Integer.to_string()
+      |> String.pad_leading(13, "0")
 
     {:ok, gtin} = ThamaniDawa.Gtin.generate(base)
     gtin

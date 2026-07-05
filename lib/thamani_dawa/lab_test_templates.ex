@@ -7,8 +7,8 @@ defmodule ThamaniDawa.LabTestTemplates do
   """
 
   import Ecto.Query, warn: false
-  alias ThamaniDawa.Repo
   alias ThamaniDawa.LabTestTemplates.{FieldDefinition, LabTestCategory, LabTestTemplate}
+  alias ThamaniDawa.Repo
 
   ## Categories
 

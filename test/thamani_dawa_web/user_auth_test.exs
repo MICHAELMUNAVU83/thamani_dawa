@@ -7,6 +7,10 @@ defmodule ThamaniDawaWeb.UserAuthTest do
   import ThamaniDawa.AccountsFixtures
   import ThamaniDawa.OrganizationsFixtures
 
+  defp live_socket do
+    %Phoenix.LiveView.Socket{assigns: %{__changed__: %{}, flash: %{}}}
+  end
+
   describe "on_mount :mount_current_scope" do
     test "assigns current_scope, including organization_id, for a valid session token" do
       user = user_fixture()
@@ -14,7 +18,7 @@ defmodule ThamaniDawaWeb.UserAuthTest do
       session = %{"user_token" => token}
 
       assert {:cont, socket} =
-               UserAuth.on_mount(:mount_current_scope, %{}, session, %Phoenix.LiveView.Socket{})
+               UserAuth.on_mount(:mount_current_scope, %{}, session, live_socket())
 
       assert socket.assigns.current_scope.user.id == user.id
       assert socket.assigns.current_scope.organization_id == user.organization_id
@@ -31,7 +35,7 @@ defmodule ThamaniDawaWeb.UserAuthTest do
                  :mount_current_scope,
                  %{},
                  %{"user_token" => token},
-                 %Phoenix.LiveView.Socket{}
+                 live_socket()
                )
 
       assert socket.assigns.current_scope.organization_id == org_a.id
@@ -40,7 +44,7 @@ defmodule ThamaniDawaWeb.UserAuthTest do
 
     test "assigns a nil current_scope when there is no session token" do
       assert {:cont, socket} =
-               UserAuth.on_mount(:mount_current_scope, %{}, %{}, %Phoenix.LiveView.Socket{})
+               UserAuth.on_mount(:mount_current_scope, %{}, %{}, live_socket())
 
       assert socket.assigns.current_scope == nil
     end
@@ -53,14 +57,14 @@ defmodule ThamaniDawaWeb.UserAuthTest do
       session = %{"user_token" => token}
 
       assert {:cont, socket} =
-               UserAuth.on_mount(:require_authenticated, %{}, session, %Phoenix.LiveView.Socket{})
+               UserAuth.on_mount(:require_authenticated, %{}, session, live_socket())
 
       assert socket.assigns.current_scope.user.id == user.id
     end
 
     test "halts and redirects when there is no user" do
       assert {:halt, socket} =
-               UserAuth.on_mount(:require_authenticated, %{}, %{}, %Phoenix.LiveView.Socket{})
+               UserAuth.on_mount(:require_authenticated, %{}, %{}, live_socket())
 
       assert socket.redirected
     end
@@ -73,7 +77,7 @@ defmodule ThamaniDawaWeb.UserAuthTest do
       session = %{"user_token" => token}
 
       assert {:cont, socket} =
-               UserAuth.on_mount(:require_admin, %{}, session, %Phoenix.LiveView.Socket{})
+               UserAuth.on_mount(:require_admin, %{}, session, live_socket())
 
       assert socket.assigns.current_scope.user.id == user.id
     end
@@ -84,14 +88,14 @@ defmodule ThamaniDawaWeb.UserAuthTest do
       session = %{"user_token" => token}
 
       assert {:halt, socket} =
-               UserAuth.on_mount(:require_admin, %{}, session, %Phoenix.LiveView.Socket{})
+               UserAuth.on_mount(:require_admin, %{}, session, live_socket())
 
       assert socket.redirected
     end
 
     test "halts and redirects when there is no user" do
       assert {:halt, socket} =
-               UserAuth.on_mount(:require_admin, %{}, %{}, %Phoenix.LiveView.Socket{})
+               UserAuth.on_mount(:require_admin, %{}, %{}, live_socket())
 
       assert socket.redirected
     end

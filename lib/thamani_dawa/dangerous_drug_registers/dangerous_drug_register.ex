@@ -23,6 +23,9 @@ defmodule ThamaniDawa.DangerousDrugRegisters.DangerousDrugRegister do
     |> validate_number(:last_entry_number, greater_than_or_equal_to: 0)
     |> foreign_key_constraint(:site_id)
     |> foreign_key_constraint(:product_id)
-    |> unique_constraint([:organization_id, :product_id, :month, :year])
+    |> unique_constraint(:product_id,
+      name: :dangerous_drug_registers_organization_id_product_id_month_year_,
+      match: :prefix
+    )
   end
 end

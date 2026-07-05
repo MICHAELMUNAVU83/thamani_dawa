@@ -7,10 +7,10 @@ alias ThamaniDawa.DangerousDrugRegisters.DangerousDrugRegister
 alias ThamaniDawa.Gtin
 alias ThamaniDawa.LabOrders
 alias ThamaniDawa.LabOrders.{LabConsumableUsage, LabOrder, LabOrderTest}
-alias ThamaniDawa.LabTestTemplates
-alias ThamaniDawa.LabTestTemplates.{LabTestCategory, LabTestTemplate}
 alias ThamaniDawa.LabTests
 alias ThamaniDawa.LabTests.LabTest
+alias ThamaniDawa.LabTestTemplates
+alias ThamaniDawa.LabTestTemplates.{LabTestCategory, LabTestTemplate}
 alias ThamaniDawa.Organizations
 alias ThamaniDawa.Organizations.Organization
 alias ThamaniDawa.Patients

@@ -20,6 +20,8 @@ defmodule ThamaniDawa.PharmacyLogs.PharmacyLog do
     |> validate_required([:site_id, :log_type, :month, :year])
     |> validate_number(:month, greater_than_or_equal_to: 1, less_than_or_equal_to: 12)
     |> foreign_key_constraint(:site_id)
-    |> unique_constraint([:organization_id, :log_type, :month, :year])
+    |> unique_constraint(:log_type,
+      name: :pharmacy_logs_organization_id_log_type_month_year_index
+    )
   end
 end

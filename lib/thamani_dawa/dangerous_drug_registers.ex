@@ -6,8 +6,8 @@ defmodule ThamaniDawa.DangerousDrugRegisters do
   """
 
   import Ecto.Query, warn: false
-  alias ThamaniDawa.Repo
   alias ThamaniDawa.DangerousDrugRegisters.DangerousDrugRegister
+  alias ThamaniDawa.Repo
 
   @doc "Lists an organization's dangerous drug registers."
   def list_dangerous_drug_registers(organization_id) do

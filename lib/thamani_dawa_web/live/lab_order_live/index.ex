@@ -3,8 +3,8 @@ defmodule ThamaniDawaWeb.LabOrderLive.Index do
 
   alias ThamaniDawa.LabOrders
   alias ThamaniDawa.LabOrders.LabOrder
-  alias ThamaniDawa.LabTestTemplates
   alias ThamaniDawa.LabTests
+  alias ThamaniDawa.LabTestTemplates
   alias ThamaniDawa.Patients
   alias ThamaniDawa.Patients.Patient
   alias ThamaniDawa.Sites

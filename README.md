@@ -36,11 +36,11 @@ Open http://localhost:4000. The runtime `PORT` env var can override the port; de
 
 All seeded users use PIN `1234` for secondary PIN checks.
 
-| Email | Password | Role | Default area |
-| --- | --- | --- | --- |
-| `admin@example.com` | `password1234` | `admin` | `/pharmacy`, plus `/org/*`, `/lab/*` |
-| `pharmacist@example.com` | `password1234` | `pharmacist` | `/pharmacy` |
-| `lab@example.com` | `password1234` | `lab_technician` | `/lab` |
+| Email                    | Password       | Role             | Default area                         |
+| ------------------------ | -------------- | ---------------- | ------------------------------------ |
+| `admin@example.com`      | `password1234` | `admin`          | `/pharmacy`, plus `/org/*`, `/lab/*` |
+| `pharmacist@example.com` | `password1234` | `pharmacist`     | `/pharmacy`                          |
+| `lab@example.com`        | `password1234` | `lab_technician` | `/lab`                               |
 
 ## Common Commands
 
@@ -59,6 +59,26 @@ mix precommit
 ```
 
 `mix precommit` compiles with warnings as errors, checks unused deps, formats, runs Credo, and runs tests. There are no intentionally blocked destructive aliases in this project; `mix ecto.reset` is destructive because it drops the local database.
+
+## Opening a Pull Request
+
+Before opening a pull request:
+
+1. Run `./scripts/check_linters.sh` and fix any formatting, Credo, or test failures.
+2. Fill out the pull request summary, changes, and how-to-test sections.
+3. Add screenshots or screen recordings for UI changes. Use `N/A` when there are no visual changes.
+4. Complete the pull request checklist, including docs, migrations, seeds, and secrets checks when relevant.
+
+### Commit Messages
+
+Use the format `name/what-pr-does` for commit messages.
+
+Examples:
+
+```sh
+michael/add-lab-order-filters
+sarah/fix-prescription-validation
+```
 
 ## Documentation
 

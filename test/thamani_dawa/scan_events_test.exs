@@ -110,7 +110,7 @@ defmodule ThamaniDawa.ScanEventsTest do
     end
 
     test "captures a scanned GLN when present", ctx do
-      scanned = "01#{ctx.batch.gtin}10#{ctx.batch.batch_no}414#{"1234567890123"}"
+      scanned = "01#{ctx.batch.gtin}10#{ctx.batch.batch_no}#{<<29>>}414#{"1234567890123"}"
 
       assert {:ok, %ScanEvent{gln: "1234567890123"}} =
                ScanEvents.log_scan_event(

@@ -6,8 +6,8 @@ defmodule ThamaniDawa.Products do
   """
 
   import Ecto.Query, warn: false
-  alias ThamaniDawa.Repo
   alias ThamaniDawa.Products.Product
+  alias ThamaniDawa.Repo
 
   @doc "Lists an organization's products."
   def list_products(organization_id) do

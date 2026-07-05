@@ -7,8 +7,8 @@ defmodule ThamaniDawa.Batches do
   """
 
   import Ecto.Query, warn: false
-  alias ThamaniDawa.Repo
   alias ThamaniDawa.Batches.Batch
+  alias ThamaniDawa.Repo
 
   @doc "Lists an organization's batches."
   def list_batches(organization_id) do

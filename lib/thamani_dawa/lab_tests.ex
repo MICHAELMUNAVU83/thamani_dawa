@@ -8,8 +8,8 @@ defmodule ThamaniDawa.LabTests do
   """
 
   import Ecto.Query, warn: false
-  alias ThamaniDawa.Repo
   alias ThamaniDawa.LabTests.LabTest
+  alias ThamaniDawa.Repo
 
   @doc "Lists an organization's lab tests."
   def list_lab_tests(organization_id) do

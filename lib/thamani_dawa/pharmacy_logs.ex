@@ -5,8 +5,8 @@ defmodule ThamaniDawa.PharmacyLogs do
   """
 
   import Ecto.Query, warn: false
-  alias ThamaniDawa.Repo
   alias ThamaniDawa.PharmacyLogs.PharmacyLog
+  alias ThamaniDawa.Repo
 
   @doc "Lists an organization's pharmacy logs."
   def list_pharmacy_logs(organization_id) do

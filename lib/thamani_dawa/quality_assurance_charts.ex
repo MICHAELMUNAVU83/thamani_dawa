@@ -6,8 +6,8 @@ defmodule ThamaniDawa.QualityAssuranceCharts do
   """
 
   import Ecto.Query, warn: false
-  alias ThamaniDawa.Repo
   alias ThamaniDawa.QualityAssuranceCharts.QualityAssuranceChart
+  alias ThamaniDawa.Repo
 
   @doc "Lists an organization's quality assurance charts."
   def list_quality_assurance_charts(organization_id) do

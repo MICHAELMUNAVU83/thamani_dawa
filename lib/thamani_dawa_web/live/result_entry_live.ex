@@ -5,7 +5,8 @@ defmodule ThamaniDawaWeb.ResultEntryLive do
   alias ThamaniDawa.LabTestTemplates
 
   def mount(%{"lab_order_id" => lab_order_id, "id" => id}, _session, socket) do
-    {:ok, assign(socket, :lab_order_id, lab_order_id) |> load_test(id)}
+    socket = assign(socket, :lab_order_id, lab_order_id)
+    {:ok, load_test(socket, id)}
   end
 
   defp load_test(socket, id) do

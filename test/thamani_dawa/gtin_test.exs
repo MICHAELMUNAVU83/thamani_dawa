@@ -9,19 +9,31 @@ defmodule ThamaniDawa.GtinTest do
 
   describe "validate_gtin/2" do
     test "is a no-op when the field wasn't changed" do
-      changeset = changeset(%{}) |> Gtin.validate_gtin()
+      changeset =
+        %{}
+        |> changeset()
+        |> Gtin.validate_gtin()
+
       assert changeset.valid?
       refute Ecto.Changeset.get_change(changeset, :gtin)
     end
 
     test "normalizes a shorter GTIN to canonical GTIN-14" do
-      changeset = changeset(%{gtin: "614141000012"}) |> Gtin.validate_gtin()
+      changeset =
+        %{gtin: "614141000012"}
+        |> changeset()
+        |> Gtin.validate_gtin()
+
       assert changeset.valid?
       assert Ecto.Changeset.get_change(changeset, :gtin) == "00614141000012"
     end
 
     test "rejects a code with an invalid check digit" do
-      changeset = changeset(%{gtin: "00614141000011"}) |> Gtin.validate_gtin()
+      changeset =
+        %{gtin: "00614141000011"}
+        |> changeset()
+        |> Gtin.validate_gtin()
+
       refute changeset.valid?
       assert {"is not a valid GTIN", []} = changeset.errors[:gtin]
     end

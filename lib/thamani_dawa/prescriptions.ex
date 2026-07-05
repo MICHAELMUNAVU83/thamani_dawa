@@ -9,8 +9,8 @@ defmodule ThamaniDawa.Prescriptions do
   import Ecto.Query, warn: false
   alias ThamaniDawa.Batches
   alias ThamaniDawa.GS1Decoder
-  alias ThamaniDawa.Repo
   alias ThamaniDawa.Prescriptions.{DispensedItem, Prescription, PrescriptionItem}
+  alias ThamaniDawa.Repo
 
   ## Prescriptions
 

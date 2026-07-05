@@ -207,7 +207,11 @@ defmodule ThamaniDawa.PrescriptionsTest do
                  11
                )
 
-      updated_batch = Batches.list_batches(ctx.organization.id) |> hd()
+      updated_batch =
+        ctx.organization.id
+        |> Batches.list_batches()
+        |> hd()
+
       assert updated_batch.remaining_quantity == updated_batch.quantity
     end
   end

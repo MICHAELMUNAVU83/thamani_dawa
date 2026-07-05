@@ -93,18 +93,21 @@ defmodule ThamaniDawa.GS1Decoder do
   defp strip_gs(rest), do: rest
 
   defp build_result(ais) do
-    Enum.reduce_while(@field_by_ai, {:ok, @empty_result}, fn {ai, field}, {:ok, acc} ->
-      case Map.fetch(ais, ai) do
-        :error ->
-          {:cont, {:ok, acc}}
+    Enum.reduce_while(@field_by_ai, {:ok, @empty_result}, &put_cast_field(ais, &1, &2))
+  end
 
-        {:ok, raw} ->
-          case cast_field(field, raw) do
-            {:ok, value} -> {:cont, {:ok, Map.put(acc, field, value)}}
-            {:error, reason} -> {:halt, {:error, reason}}
-          end
-      end
-    end)
+  defp put_cast_field(ais, {ai, field}, {:ok, acc}) do
+    case Map.fetch(ais, ai) do
+      :error -> {:cont, {:ok, acc}}
+      {:ok, raw} -> cast_and_put_field(acc, field, raw)
+    end
+  end
+
+  defp cast_and_put_field(acc, field, raw) do
+    case cast_field(field, raw) do
+      {:ok, value} -> {:cont, {:ok, Map.put(acc, field, value)}}
+      {:error, reason} -> {:halt, {:error, reason}}
+    end
   end
 
   defp cast_field(field, raw) when field in [:gtin, :gln], do: validate_digits(raw)

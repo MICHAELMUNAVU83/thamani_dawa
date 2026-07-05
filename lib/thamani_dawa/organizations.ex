@@ -5,9 +5,9 @@ defmodule ThamaniDawa.Organizations do
   """
 
   import Ecto.Query, warn: false
-  alias ThamaniDawa.Repo
-  alias ThamaniDawa.Organizations.Organization
   alias ThamaniDawa.{Accounts, Sites}
+  alias ThamaniDawa.Organizations.Organization
+  alias ThamaniDawa.Repo
 
   @doc "Gets a single organization. Raises if not found."
   def get_organization!(id), do: Repo.get!(Organization, id)

@@ -9,9 +9,9 @@ defmodule ThamaniDawa.LabOrders do
 
   import Ecto.Query, warn: false
   alias ThamaniDawa.Batches
+  alias ThamaniDawa.LabOrders.{LabConsumableUsage, LabOrder, LabOrderTest}
   alias ThamaniDawa.LabTestTemplates
   alias ThamaniDawa.Repo
-  alias ThamaniDawa.LabOrders.{LabConsumableUsage, LabOrder, LabOrderTest}
 
   ## Lab orders
 
