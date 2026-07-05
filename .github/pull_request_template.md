@@ -12,12 +12,16 @@
 
 1.
 
+## Screenshots
+
+<!-- Add screenshots or screen recordings for UI changes. Use "N/A" if this PR has no visual changes. -->
+
 ## Checklist
 
+- [ ] Ran `./scripts/check_linters.sh`
 - [ ] Ran `mix format`
-- [ ] Ran `mix credo --strict`
+- [ ] Ran `mix credo`
 - [ ] Ran `mix test` and tests pass
-- [ ] Ran `mix precommit`
 - [ ] Added/updated migrations and seeds if the schema changed
 - [ ] Updated `README.md` / docs if setup or behavior changed
 - [ ] No secrets or credentials committed
