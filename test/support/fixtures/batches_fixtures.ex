@@ -3,6 +3,7 @@ defmodule ThamaniDawa.BatchesFixtures do
   Test helpers for creating entities via `ThamaniDawa.Batches`.
   """
 
+  alias ThamaniDawa.AccountsFixtures
   alias ThamaniDawa.Batches
   alias ThamaniDawa.OrganizationsFixtures
   alias ThamaniDawa.ProductsFixtures
@@ -12,7 +13,7 @@ defmodule ThamaniDawa.BatchesFixtures do
     Enum.into(attrs, %{
       gtin: unique_gtin(),
       batch_no: "BATCH-#{System.unique_integer()}",
-      expiry: ~D[2027-01-01],
+      expiry_date: ~D[2027-01-01],
       quantity: 100
     })
   end
@@ -49,7 +50,13 @@ defmodule ThamaniDawa.BatchesFixtures do
         SitesFixtures.site_fixture(%{organization_id: organization_id}).id
       end)
 
-    attrs = Map.merge(attrs, %{product_id: product_id, site_id: site_id})
+    {approver_id, attrs} =
+      Map.pop_lazy(attrs, :approver_id, fn ->
+        AccountsFixtures.user_fixture(%{organization_id: organization_id}).id
+      end)
+
+    attrs =
+      Map.merge(attrs, %{product_id: product_id, site_id: site_id, approver_id: approver_id})
 
     {:ok, batch} =
       attrs

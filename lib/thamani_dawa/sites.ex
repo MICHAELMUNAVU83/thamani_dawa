@@ -38,7 +38,7 @@ defmodule ThamaniDawa.Sites do
   owner never has to think about "sites" as a concept.
   """
   def create_default_site(organization_id, name) when is_integer(organization_id) do
-    create_site(organization_id, %{name: name, site_type: :pharmacy})
+    create_site(organization_id, %{name: name, site_type: :pharmacy, lat: 0, long: 0})
   end
 
   @doc "Creates a site under the given organization."

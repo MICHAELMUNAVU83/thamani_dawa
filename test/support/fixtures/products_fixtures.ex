@@ -5,12 +5,13 @@ defmodule ThamaniDawa.ProductsFixtures do
 
   alias ThamaniDawa.OrganizationsFixtures
   alias ThamaniDawa.Products
+  alias ThamaniDawa.SitesFixtures
 
   def valid_product_attributes(attrs \\ %{}) do
     Enum.into(attrs, %{
       generic_name: "Paracetamol #{System.unique_integer()}",
-      product_type: :drug,
-      uom: "tablet"
+      uom: "tablet",
+      price: 100
     })
   end
 
@@ -20,6 +21,13 @@ defmodule ThamaniDawa.ProductsFixtures do
       Map.pop_lazy(attrs, :organization_id, fn ->
         OrganizationsFixtures.organization_fixture().id
       end)
+
+    {site_id, attrs} =
+      Map.pop_lazy(attrs, :site_id, fn ->
+        SitesFixtures.site_fixture(%{organization_id: organization_id}).id
+      end)
+
+    attrs = Map.put(attrs, :site_id, site_id)
 
     {:ok, product} =
       attrs

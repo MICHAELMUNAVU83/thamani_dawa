@@ -4,7 +4,6 @@ defmodule ThamaniDawaWeb.LabOrderLive.Index do
   alias ThamaniDawa.LabOrders
   alias ThamaniDawa.LabOrders.LabOrder
   alias ThamaniDawa.LabTests
-  alias ThamaniDawa.LabTestTemplates
   alias ThamaniDawa.Patients
   alias ThamaniDawa.Patients.Patient
   alias ThamaniDawa.Sites
@@ -29,7 +28,6 @@ defmodule ThamaniDawaWeb.LabOrderLive.Index do
     socket
     |> assign(:patients, Patients.list_patients(organization_id))
     |> assign(:lab_tests, LabTests.list_lab_tests(organization_id))
-    |> assign(:templates, LabTestTemplates.list_lab_test_templates(organization_id))
     |> assign(:sites, Sites.list_sites(organization_id))
     |> assign(:site_locked, not is_nil(site_id))
     |> assign(:urgencies, @urgencies)
@@ -65,9 +63,9 @@ defmodule ThamaniDawaWeb.LabOrderLive.Index do
 
   def handle_event("save", params, socket) do
     %{"lab_order" => header_attrs} = params
-    tests_attrs = params |> Map.get("tests", []) |> Enum.map(&sanitize_test_attrs/1)
+    results_attrs = params |> Map.get("tests", [])
 
-    if tests_attrs == [] do
+    if results_attrs == [] do
       {:noreply, put_flash(socket, :error, "Add at least one test to the order.")}
     else
       organization_id = socket.assigns.current_scope.organization_id
@@ -75,7 +73,7 @@ defmodule ThamaniDawaWeb.LabOrderLive.Index do
 
       with {:ok, header_attrs} <- resolve_patient(socket, organization_id, header_attrs, params),
            {:ok, _result} <-
-             LabOrders.create_lab_order_with_tests(organization_id, header_attrs, tests_attrs) do
+             LabOrders.create_lab_order_with_results(organization_id, header_attrs, results_attrs) do
         {:noreply,
          socket
          |> put_flash(:info, "Lab order created.")
@@ -101,12 +99,6 @@ defmodule ThamaniDawaWeb.LabOrderLive.Index do
   end
 
   defp resolve_patient(_socket, _organization_id, header_attrs, _params), do: {:ok, header_attrs}
-
-  defp sanitize_test_attrs(test_attrs) do
-    Map.update(test_attrs, "template_id", nil, fn value ->
-      if value == "", do: nil, else: value
-    end)
-  end
 
   defp assign_lab_orders(socket) do
     organization_id = socket.assigns.current_scope.organization_id
@@ -178,15 +170,14 @@ defmodule ThamaniDawaWeb.LabOrderLive.Index do
             />
             <.input field={@header_form[:payment_type]} label="Payment type" />
             <.input field={@header_form[:has_paid]} type="checkbox" label="Paid" />
+            <.input field={@header_form[:lab_request]} type="textarea" label="Lab request" required />
             <.input
-              field={@header_form[:sample_collection_date]}
-              type="date"
-              label="Sample collection date"
+              field={@header_form[:referring_facility]}
+              label="Referring facility"
+              required
             />
-            <.input
-              field={@header_form[:sample_collection_description]}
-              label="Sample collection description"
-            />
+            <.input field={@header_form[:referring_doctor]} label="Referring doctor" required />
+            <.input field={@header_form[:referred_date]} type="time" label="Referred date" required />
 
             <.header class="mt-4">Tests</.header>
             <div :for={id <- @test_ids} class="border rounded-box border-base-300 p-3 mb-2">
@@ -196,13 +187,6 @@ defmodule ThamaniDawaWeb.LabOrderLive.Index do
                 label="Test"
                 options={Enum.map(@lab_tests, &{&1.name, &1.id})}
                 prompt="Choose a test"
-              />
-              <.input
-                type="select"
-                name="tests[][template_id]"
-                label="Result template"
-                options={Enum.map(@templates, &{&1.name, &1.id})}
-                prompt="No template"
               />
               <.button type="button" phx-click="remove_test" phx-value-id={id} class="mt-2">
                 Remove test

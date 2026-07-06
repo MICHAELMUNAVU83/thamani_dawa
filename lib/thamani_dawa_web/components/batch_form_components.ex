@@ -2,9 +2,9 @@ defmodule ThamaniDawaWeb.BatchFormComponents do
   @moduledoc """
   Shared "receive stock" form, used by both `ThamaniDawaWeb.ReceiveStockLive`
   (pharmacy) and `ThamaniDawaWeb.LabReceiveStockLive` (lab) — they write to
-  the same `ThamaniDawa.Batches` context and only differ in which
-  `product_type`s populate the product picker and where they redirect to
-  after a successful receipt.
+  the same `ThamaniDawa.Batches` context and only differ in which products
+  populate the product picker (passed in via the `products` assign) and
+  where they redirect to after a successful receipt.
   """
 
   use Phoenix.Component
@@ -64,10 +64,9 @@ defmodule ThamaniDawaWeb.BatchFormComponents do
       <.input field={@form[:batch_no]} label="Batch / lot no." required />
       <.input field={@form[:serial]} label="Serial" />
       <.input field={@form[:manufacture_date]} type="date" label="Manufacture date" />
-      <.input field={@form[:expiry]} type="date" label="Expiry" required />
+      <.input field={@form[:expiry_date]} type="date" label="Expiry" required />
       <.input field={@form[:quantity]} type="number" label="Quantity" required />
       <.input field={@form[:cost_per_unit]} type="number" label="Cost per unit" step="any" />
-      <.input field={@form[:unit_price]} type="number" label="Unit price" step="any" />
 
       <.input
         field={@form[:supplier_id]}
@@ -83,7 +82,6 @@ defmodule ThamaniDawaWeb.BatchFormComponents do
   end
 
   defp product_label(product) do
-    name = product.generic_name || product.name || "(unnamed)"
-    if product.brand_name, do: "#{name} (#{product.brand_name})", else: name
+    product.generic_name || product.brand_name || "(unnamed)"
   end
 end

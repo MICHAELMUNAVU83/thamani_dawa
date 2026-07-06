@@ -1,9 +1,8 @@
 defmodule ThamaniDawa.Batches do
   @moduledoc """
   The one unified batch table for both pharmacy and lab stock (§4.1) —
-  `product_id` + `site_id` + GTIN/batch-lot/expiry, whether it arrived by
-  direct receipt from a `supplier_id` or by transfer lineage via
-  `source_batch_id` (§5).
+  `product_id` + `site_id` + GTIN/batch-lot/expiry, received either directly
+  from a `supplier_id` or otherwise (§5).
   """
 
   import Ecto.Query, warn: false
@@ -63,9 +62,8 @@ defmodule ThamaniDawa.Batches do
         where: b.organization_id == ^organization_id,
         where: b.site_id == ^site_id,
         where: b.product_id == ^product_id,
-        where: b.is_active,
         where: b.remaining_quantity > 0,
-        order_by: [asc: b.expiry],
+        order_by: [asc: b.expiry_date],
         limit: 1,
         lock: "FOR UPDATE"
 

@@ -1,10 +1,6 @@
 defmodule ThamaniDawa.LabTests do
   @moduledoc """
   The billable lab test catalog (§4.4): what a lab can order and charge for.
-  Distinct from `ThamaniDawa.LabTestTemplates`, which drives *how* a test's
-  results are structured and entered — a `lab_order_tests` row references a
-  `lab_tests` row for pricing and, optionally, a `lab_test_templates` row for
-  templated result entry.
   """
 
   import Ecto.Query, warn: false

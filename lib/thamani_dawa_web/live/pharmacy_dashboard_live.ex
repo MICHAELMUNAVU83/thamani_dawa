@@ -46,14 +46,14 @@ defmodule ThamaniDawaWeb.PharmacyDashboardLive do
 
     batches
     |> Enum.filter(fn batch ->
-      batch.is_active and batch.remaining_quantity > 0 and
-        Date.diff(batch.expiry, today) in 0..@near_expiry_days
+      batch.remaining_quantity > 0 &&
+        Date.diff(batch.expiry_date, today) in 0..@near_expiry_days
     end)
-    |> Enum.sort_by(& &1.expiry, Date)
+    |> Enum.sort_by(& &1.expiry_date, Date)
   end
 
   defp product_name(nil), do: "(unknown product)"
-  defp product_name(product), do: product.generic_name || product.name || "(unnamed)"
+  defp product_name(product), do: product.generic_name || product.brand_name || "(unnamed)"
 
   def render(assigns) do
     ~H"""
@@ -77,7 +77,7 @@ defmodule ThamaniDawaWeb.PharmacyDashboardLive do
       <.table id="near-expiry" rows={@near_expiry}>
         <:col :let={batch} label="Product">{product_name(@products_by_id[batch.product_id])}</:col>
         <:col :let={batch} label="Batch no.">{batch.batch_no}</:col>
-        <:col :let={batch} label="Expiry">{batch.expiry}</:col>
+        <:col :let={batch} label="Expiry">{batch.expiry_date}</:col>
         <:col :let={batch} label="Remaining">{batch.remaining_quantity}</:col>
       </.table>
 

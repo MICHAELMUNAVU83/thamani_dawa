@@ -58,9 +58,6 @@ defmodule ThamaniDawaWeb.Router do
       live "/pharmacy/prescriptions", PrescriptionLive.Index, :index
       live "/pharmacy/prescriptions/new", PrescriptionLive.Index, :new
       live "/pharmacy/prescriptions/:id", PrescriptionLive.Show, :show
-
-      live "/pharmacy/dangerous-drug-register", DangerousDrugRegisterLive.Index, :index
-      live "/pharmacy/pharmacy-logs", PharmacyLogLive.Index, :index
     end
 
     live_session :lab, on_mount: [{ThamaniDawaWeb.UserAuth, :require_lab_access}] do
@@ -71,18 +68,11 @@ defmodule ThamaniDawaWeb.Router do
       live "/lab/orders/new", LabOrderLive.Index, :new
       live "/lab/orders/:id", LabOrderLive.Show, :show
 
-      live "/lab/orders/:lab_order_id/tests/:id/results", ResultEntryLive, :edit
+      live "/lab/orders/:lab_order_id/results/:id/edit", ResultEntryLive, :edit
 
       live "/lab/verification-queue", VerificationQueueLive, :index
 
-      live "/lab/test-templates", TestTemplateLive.Index, :index
-      live "/lab/test-templates/new", TestTemplateLive.Index, :new
-      live "/lab/test-templates/:id/edit", TestTemplateLive.Index, :edit
-      live "/lab/test-categories", TestCategoryLive.Index, :index
-      live "/lab/test-categories/new", TestCategoryLive.Index, :new
-
       live "/lab/receive-stock", LabReceiveStockLive, :new
-      live "/lab/quality-assurance", QualityAssuranceLive.Index, :index
     end
   end
 

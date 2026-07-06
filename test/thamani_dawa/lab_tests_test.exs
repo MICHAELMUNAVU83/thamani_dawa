@@ -21,7 +21,9 @@ defmodule ThamaniDawa.LabTestsTest do
       assert {:ok, %LabTest{} = lab_test} =
                LabTests.create_lab_test(organization.id, %{
                  name: "Full Blood Count",
-                 price: Decimal.new("500.00")
+                 price: Decimal.new("500.00"),
+                 category: "Haematology",
+                 field_definitions: %{"haemoglobin" => %{"type" => "number"}}
                })
 
       assert lab_test.organization_id == organization.id

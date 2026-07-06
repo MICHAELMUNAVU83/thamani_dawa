@@ -10,6 +10,8 @@ defmodule ThamaniDawa.Sites.Site do
     field :site_type, Ecto.Enum, values: @site_types
     field :gln, :string
     field :address, :string
+    field :lat, :integer
+    field :long, :integer
     field :is_active, :boolean, default: true
 
     timestamps(type: :utc_datetime)
@@ -18,8 +20,8 @@ defmodule ThamaniDawa.Sites.Site do
   @doc false
   def changeset(site, attrs) do
     site
-    |> cast(attrs, [:name, :site_type, :gln, :address, :is_active])
-    |> validate_required([:name, :site_type])
+    |> cast(attrs, [:name, :site_type, :gln, :address, :lat, :long, :is_active])
+    |> validate_required([:name, :site_type, :lat, :long])
     |> unique_constraint(:gln)
   end
 

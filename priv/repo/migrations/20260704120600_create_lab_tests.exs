@@ -6,8 +6,9 @@ defmodule ThamaniDawa.Repo.Migrations.CreateLabTests do
       add :organization_id, references(:organizations, on_delete: :delete_all), null: false
       add :name, :string, null: false
       add :price, :decimal
-      add :subsidized_price, :decimal
       add :is_active, :boolean, null: false, default: true
+      add :field_definitions, :map, null: false
+      add :category, :text, null: false
 
       timestamps(type: :utc_datetime)
     end

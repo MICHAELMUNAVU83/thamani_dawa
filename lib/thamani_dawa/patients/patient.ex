@@ -10,6 +10,7 @@ defmodule ThamaniDawa.Patients.Patient do
     field :gender, :string
     field :phone, :string
     field :national_id, :string
+    field :gsrn, :integer
 
     timestamps(type: :utc_datetime)
   end
@@ -17,8 +18,8 @@ defmodule ThamaniDawa.Patients.Patient do
   @doc false
   def changeset(patient, attrs) do
     patient
-    |> cast(attrs, [:full_name, :date_of_birth, :age, :gender, :phone, :national_id])
-    |> validate_required([:full_name])
+    |> cast(attrs, [:full_name, :date_of_birth, :age, :gender, :phone, :national_id, :gsrn])
+    |> validate_required([:full_name, :gsrn])
     |> validate_date_of_birth_or_age()
   end
 

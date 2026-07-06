@@ -8,17 +8,20 @@ defmodule ThamaniDawa.LabOrders.LabOrder do
     field :organization_id, :id
     field :site_id, :id
     field :patient_id, :id
+    field :patient_visit_id, :id
     field :prescriber_name, :string
     field :ordered_by_id, :id
     field :urgency, :string
     field :payment_type, :string
     field :has_paid, :boolean, default: false
     field :total_amount, :decimal
-    field :sample_collection_date, :date
-    field :sample_collection_description, :string
     field :status, Ecto.Enum, values: @statuses, default: :pending
     field :lab_report, :string
     field :test_findings, :string
+    field :lab_request, :string
+    field :referring_facility, :string
+    field :referring_doctor, :string
+    field :referred_date, :time
 
     timestamps(type: :utc_datetime)
   end
@@ -29,21 +32,33 @@ defmodule ThamaniDawa.LabOrders.LabOrder do
     |> cast(attrs, [
       :site_id,
       :patient_id,
+      :patient_visit_id,
       :prescriber_name,
       :ordered_by_id,
       :urgency,
       :payment_type,
       :has_paid,
       :total_amount,
-      :sample_collection_date,
-      :sample_collection_description,
       :status,
       :lab_report,
-      :test_findings
+      :test_findings,
+      :lab_request,
+      :referring_facility,
+      :referring_doctor,
+      :referred_date
     ])
-    |> validate_required([:site_id, :patient_id])
+    |> validate_required([
+      :site_id,
+      :patient_id,
+      :patient_visit_id,
+      :lab_request,
+      :referring_facility,
+      :referring_doctor,
+      :referred_date
+    ])
     |> foreign_key_constraint(:site_id)
     |> foreign_key_constraint(:patient_id)
+    |> foreign_key_constraint(:patient_visit_id)
     |> foreign_key_constraint(:ordered_by_id)
   end
 

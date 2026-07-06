@@ -5,7 +5,6 @@ defmodule ThamaniDawaWeb.ReceiveStockLive do
   alias ThamaniDawa.Batches.Batch
   alias ThamaniDawa.GS1Decoder
   alias ThamaniDawa.Products
-  alias ThamaniDawa.ScanEvents
   alias ThamaniDawa.Sites
   alias ThamaniDawa.Suppliers
   alias ThamaniDawaWeb.SiteScoping
@@ -20,7 +19,7 @@ defmodule ThamaniDawaWeb.ReceiveStockLive do
     products =
       organization_id
       |> Products.list_products()
-      |> Enum.filter(&(&1.product_type == :drug))
+      |> SiteScoping.for_current_site(scope)
 
     initial_attrs = if site_id, do: %{site_id: site_id}, else: %{}
 
@@ -72,17 +71,7 @@ defmodule ThamaniDawaWeb.ReceiveStockLive do
       })
 
     case Batches.create_batch(scope.organization_id, attrs) do
-      {:ok, batch} ->
-        if socket.assigns.gs1_used do
-          ScanEvents.log_scan_event(
-            scope.organization_id,
-            :receipt,
-            batch.id,
-            user.id,
-            socket.assigns.raw_gs1
-          )
-        end
-
+      {:ok, _batch} ->
         {:noreply,
          socket
          |> put_flash(:info, "Stock received.")

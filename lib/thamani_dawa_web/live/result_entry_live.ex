@@ -2,22 +2,17 @@ defmodule ThamaniDawaWeb.ResultEntryLive do
   use ThamaniDawaWeb, :live_view
 
   alias ThamaniDawa.LabOrders
-  alias ThamaniDawa.LabTestTemplates
 
   def mount(%{"lab_order_id" => lab_order_id, "id" => id}, _session, socket) do
     socket = assign(socket, :lab_order_id, lab_order_id)
-    {:ok, load_test(socket, id)}
+    {:ok, load_result(socket, id)}
   end
 
-  defp load_test(socket, id) do
+  defp load_result(socket, id) do
     organization_id = socket.assigns.current_scope.organization_id
-    test = LabOrders.get_lab_order_test!(organization_id, id)
+    result = LabOrders.get_lab_order_result!(organization_id, id)
 
-    template =
-      test.template_id &&
-        LabTestTemplates.get_lab_test_template!(organization_id, test.template_id)
-
-    assign(socket, test: test, template: template)
+    assign(socket, result: result)
   end
 
   def handle_event("save", %{"values" => raw_values}, socket) do
@@ -26,32 +21,22 @@ defmodule ThamaniDawaWeb.ResultEntryLive do
 
     case LabOrders.record_result(
            organization_id,
-           socket.assigns.test.id,
+           socket.assigns.result.id,
            performer_id,
            raw_values
          ) do
-      {:ok, test} ->
+      {:ok, result} ->
         {:noreply,
          socket
          |> put_flash(:info, "Results recorded.")
-         |> assign(:test, test)}
+         |> assign(:result, result)}
 
       {:error, reason} ->
         {:noreply, put_flash(socket, :error, "Couldn't record results: #{inspect(reason)}")}
     end
   end
 
-  defp current_value(test, key), do: get_in(test.results, [key, "value"])
-  defp current_flag(test, key), do: get_in(test.results, [key, "flag"])
-
-  defp flag_class("high"), do: "text-error"
-  defp flag_class("low"), do: "text-error"
-  defp flag_class("normal"), do: "text-success"
-  defp flag_class(_), do: ""
-
-  defp input_type(:numeric), do: "number"
-  defp input_type(:text), do: "text"
-  defp input_type(:select), do: "text"
+  defp current_value(result, key), do: get_in(result.results, [key, "value"])
 
   def render(assigns) do
     ~H"""
@@ -64,26 +49,12 @@ defmodule ThamaniDawaWeb.ResultEntryLive do
       </.header>
 
       <form phx-submit="save">
-        <div :for={field <- @template.field_definitions} :if={@template} class="mb-2">
-          <label class="label">{field.label} <span :if={field.unit}>({field.unit})</span></label>
-          <input
-            type={input_type(field.data_type)}
-            step={field.data_type == :numeric && "any"}
-            name={"values[#{field.key}]"}
-            value={current_value(@test, field.key)}
-            class="input w-full"
-          />
-          <p :if={current_flag(@test, field.key)} class={flag_class(current_flag(@test, field.key))}>
-            Flag: {current_flag(@test, field.key)}
-          </p>
-        </div>
-
-        <div :if={is_nil(@template)} class="mb-2">
+        <div class="mb-2">
           <label class="label">Result</label>
           <input
             type="text"
             name="values[result]"
-            value={current_value(@test, "result")}
+            value={current_value(@result, "result")}
             class="input w-full"
           />
         </div>

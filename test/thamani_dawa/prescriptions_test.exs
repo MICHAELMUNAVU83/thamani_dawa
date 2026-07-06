@@ -3,22 +3,30 @@ defmodule ThamaniDawa.PrescriptionsTest do
 
   alias ThamaniDawa.Batches
   alias ThamaniDawa.Prescriptions
-  alias ThamaniDawa.Prescriptions.{DispensedItem, Prescription}
+  alias ThamaniDawa.Prescriptions.{Prescription, PrescriptionItem}
 
   import ThamaniDawa.AccountsFixtures
   import ThamaniDawa.BatchesFixtures
   import ThamaniDawa.OrganizationsFixtures
   import ThamaniDawa.PatientsFixtures
+  import ThamaniDawa.PatientVisitsFixtures
   import ThamaniDawa.PrescriptionsFixtures
   import ThamaniDawa.ProductsFixtures
   import ThamaniDawa.SitesFixtures
 
   describe "create_prescription/2" do
-    test "requires site_id and patient_id" do
+    test "requires patient_visit_id and referral details" do
       organization = organization_fixture()
 
       assert {:error, changeset} = Prescriptions.create_prescription(organization.id, %{})
-      assert %{site_id: ["can't be blank"], patient_id: ["can't be blank"]} = errors_on(changeset)
+
+      assert %{
+               patient_visit_id: ["can't be blank"],
+               doctors_note: ["can't be blank"],
+               source_facility: ["can't be blank"],
+               referring_doctor: ["can't be blank"],
+               referral_date: ["can't be blank"]
+             } = errors_on(changeset)
     end
 
     test "defaults status to pending and scopes to the organization" do
@@ -26,13 +34,24 @@ defmodule ThamaniDawa.PrescriptionsTest do
       site = site_fixture(%{organization_id: organization.id})
       patient = patient_fixture(%{organization_id: organization.id})
 
+      patient_visit =
+        patient_visit_fixture(%{
+          organization_id: organization.id,
+          site_id: site.id,
+          patient_id: patient.id
+        })
+
       assert {:ok, %Prescription{} = prescription} =
                Prescriptions.create_prescription(organization.id, %{
-                 site_id: site.id,
-                 patient_id: patient.id
+                 patient_visit_id: patient_visit.id,
+                 doctors_note: "Take after meals",
+                 source_facility: "General Hospital",
+                 referring_doctor: "Dr. Jane Doe",
+                 referral_date: ~T[09:00:00]
                })
 
       assert prescription.organization_id == organization.id
+      assert prescription.patient_visit_id == patient_visit.id
       assert prescription.status == :pending
     end
   end
@@ -42,16 +61,30 @@ defmodule ThamaniDawa.PrescriptionsTest do
       organization = organization_fixture()
       site = site_fixture(%{organization_id: organization.id})
       patient = patient_fixture(%{organization_id: organization.id})
+
+      patient_visit =
+        patient_visit_fixture(%{
+          organization_id: organization.id,
+          site_id: site.id,
+          patient_id: patient.id
+        })
+
       product = product_fixture(%{organization_id: organization.id})
 
       assert {:ok, %{prescription: prescription, prescription_items: [item]}} =
                Prescriptions.create_prescription_with_items(
                  organization.id,
-                 %{site_id: site.id, patient_id: patient.id},
+                 %{
+                   patient_visit_id: patient_visit.id,
+                   doctors_note: "Take after meals",
+                   source_facility: "General Hospital",
+                   referring_doctor: "Dr. Jane Doe",
+                   referral_date: ~T[09:00:00]
+                 },
                  [%{product_id: product.id, quantity_prescribed: 20}]
                )
 
-      assert prescription.site_id == site.id
+      assert prescription.patient_visit_id == patient_visit.id
       assert item.prescription_id == prescription.id
       assert item.quantity_prescribed == 20
     end
@@ -61,10 +94,23 @@ defmodule ThamaniDawa.PrescriptionsTest do
       site = site_fixture(%{organization_id: organization.id})
       patient = patient_fixture(%{organization_id: organization.id})
 
+      patient_visit =
+        patient_visit_fixture(%{
+          organization_id: organization.id,
+          site_id: site.id,
+          patient_id: patient.id
+        })
+
       assert {:error, changeset} =
                Prescriptions.create_prescription_with_items(
                  organization.id,
-                 %{site_id: site.id, patient_id: patient.id},
+                 %{
+                   patient_visit_id: patient_visit.id,
+                   doctors_note: "Take after meals",
+                   source_facility: "General Hospital",
+                   referring_doctor: "Dr. Jane Doe",
+                   referral_date: ~T[09:00:00]
+                 },
                  [%{}]
                )
 
@@ -79,9 +125,20 @@ defmodule ThamaniDawa.PrescriptionsTest do
       site = site_fixture(%{organization_id: organization.id})
       product = product_fixture(%{organization_id: organization.id})
       pharmacist = staff_fixture(%{organization_id: organization.id})
+      patient = patient_fixture(%{organization_id: organization.id})
+
+      patient_visit =
+        patient_visit_fixture(%{
+          organization_id: organization.id,
+          site_id: site.id,
+          patient_id: patient.id
+        })
 
       prescription =
-        prescription_fixture(%{organization_id: organization.id, site_id: site.id})
+        prescription_fixture(%{
+          organization_id: organization.id,
+          patient_visit_id: patient_visit.id
+        })
 
       item =
         prescription_item_fixture(%{
@@ -130,7 +187,7 @@ defmodule ThamaniDawa.PrescriptionsTest do
           quantity: 100
         })
 
-      assert {:ok, %DispensedItem{} = dispensed_item} =
+      assert {:ok, %PrescriptionItem{} = updated_item} =
                Prescriptions.dispense_item(
                  ctx.organization.id,
                  ctx.item.id,
@@ -138,37 +195,15 @@ defmodule ThamaniDawa.PrescriptionsTest do
                  10
                )
 
-      assert dispensed_item.batch_id == soon_batch.id
-      assert dispensed_item.quantity == 10
-      assert dispensed_item.pharmacist_id == ctx.pharmacist.id
-      assert dispensed_item.is_verified == false
-      assert %DateTime{} = dispensed_item.dispensed_at
+      assert updated_item.quantity_dispensed == 10
 
       updated_batch = Batches.get_batch!(ctx.organization.id, soon_batch.id)
       assert updated_batch.remaining_quantity == 90
-
-      updated_item = Prescriptions.get_prescription_item!(ctx.organization.id, ctx.item.id)
-      assert updated_item.quantity_dispensed == 10
 
       updated_prescription =
         Prescriptions.get_prescription!(ctx.organization.id, ctx.prescription.id)
 
       assert updated_prescription.status == :completed
-    end
-
-    test "defaults unit_price to the picked batch's own unit_price", ctx do
-      batch =
-        batch_fixture(%{
-          organization_id: ctx.organization.id,
-          site_id: ctx.site.id,
-          product_id: ctx.product.id,
-          unit_price: Decimal.new("12.50")
-        })
-
-      assert {:ok, %DispensedItem{unit_price: unit_price}} =
-               Prescriptions.dispense_item(ctx.organization.id, ctx.item.id, ctx.pharmacist.id, 5)
-
-      assert Decimal.equal?(unit_price, batch.unit_price)
     end
 
     test "moves the prescription to partially_dispensed on a partial dispense", ctx do
@@ -178,7 +213,7 @@ defmodule ThamaniDawa.PrescriptionsTest do
         product_id: ctx.product.id
       })
 
-      assert {:ok, _dispensed_item} =
+      assert {:ok, _updated_item} =
                Prescriptions.dispense_item(ctx.organization.id, ctx.item.id, ctx.pharmacist.id, 4)
 
       updated_prescription =
@@ -213,65 +248,6 @@ defmodule ThamaniDawa.PrescriptionsTest do
         |> hd()
 
       assert updated_batch.remaining_quantity == updated_batch.quantity
-    end
-  end
-
-  describe "verify_dispensed_item/3" do
-    setup do
-      organization = organization_fixture()
-      site = site_fixture(%{organization_id: organization.id})
-      product = product_fixture(%{organization_id: organization.id})
-      pharmacist = staff_fixture(%{organization_id: organization.id})
-
-      batch =
-        batch_fixture(%{
-          organization_id: organization.id,
-          site_id: site.id,
-          product_id: product.id,
-          gtin: "00614141000012",
-          batch_no: "LOT-42"
-        })
-
-      prescription = prescription_fixture(%{organization_id: organization.id, site_id: site.id})
-
-      item =
-        prescription_item_fixture(%{
-          organization_id: organization.id,
-          prescription_id: prescription.id,
-          product_id: product.id,
-          quantity_prescribed: 5
-        })
-
-      {:ok, dispensed_item} =
-        Prescriptions.dispense_item(organization.id, item.id, pharmacist.id, 5)
-
-      %{organization: organization, batch: batch, dispensed_item: dispensed_item}
-    end
-
-    test "marks is_verified when the scanned code matches the dispensed batch", ctx do
-      scanned = "01#{ctx.batch.gtin}10#{ctx.batch.batch_no}"
-
-      assert {:ok, %DispensedItem{is_verified: true}} =
-               Prescriptions.verify_dispensed_item(
-                 ctx.organization.id,
-                 ctx.dispensed_item.id,
-                 scanned
-               )
-    end
-
-    test "returns :mismatch when the scanned batch/lot doesn't match, leaving is_verified false",
-         ctx do
-      scanned = "01#{ctx.batch.gtin}10WRONG-LOT"
-
-      assert {:error, :mismatch} =
-               Prescriptions.verify_dispensed_item(
-                 ctx.organization.id,
-                 ctx.dispensed_item.id,
-                 scanned
-               )
-
-      assert %DispensedItem{is_verified: false} =
-               ThamaniDawa.Repo.get!(DispensedItem, ctx.dispensed_item.id)
     end
   end
 end

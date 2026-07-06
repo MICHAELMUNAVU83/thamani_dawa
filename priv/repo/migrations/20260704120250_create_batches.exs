@@ -10,16 +10,15 @@ defmodule ThamaniDawa.Repo.Migrations.CreateBatches do
       add :batch_no, :string, null: false
       add :serial, :string
       add :manufacture_date, :date
-      add :expiry, :date, null: false
+      add :expiry_date, :date, null: false
       add :quantity, :integer, null: false
       add :remaining_quantity, :integer, null: false
       add :cost_per_unit, :decimal
-      add :unit_price, :decimal
       add :supplier_id, references(:suppliers, on_delete: :nilify_all)
-      add :source_batch_id, references(:batches, on_delete: :nilify_all)
       add :received_by_id, references(:users, on_delete: :nilify_all)
       add :received_at, :utc_datetime
-      add :is_active, :boolean, null: false, default: true
+      add :is_approved, :boolean, null: false, default: false
+      add :approver_id, references(:users, on_delete: :restrict), null: false
 
       timestamps(type: :utc_datetime)
     end
@@ -28,6 +27,6 @@ defmodule ThamaniDawa.Repo.Migrations.CreateBatches do
     create index(:batches, [:product_id])
     create index(:batches, [:site_id])
     create index(:batches, [:supplier_id])
-    create index(:batches, [:source_batch_id])
+    create index(:batches, [:approver_id])
   end
 end

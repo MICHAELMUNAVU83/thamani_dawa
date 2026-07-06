@@ -2,30 +2,22 @@ alias ThamaniDawa.Accounts
 alias ThamaniDawa.Accounts.User
 alias ThamaniDawa.Batches
 alias ThamaniDawa.Batches.Batch
-alias ThamaniDawa.DangerousDrugRegisters
-alias ThamaniDawa.DangerousDrugRegisters.DangerousDrugRegister
 alias ThamaniDawa.Gtin
 alias ThamaniDawa.LabOrders
-alias ThamaniDawa.LabOrders.{LabConsumableUsage, LabOrder, LabOrderTest}
+alias ThamaniDawa.LabOrders.{LabConsumableUsage, LabOrder, LabOrderResult}
 alias ThamaniDawa.LabTests
 alias ThamaniDawa.LabTests.LabTest
-alias ThamaniDawa.LabTestTemplates
-alias ThamaniDawa.LabTestTemplates.{LabTestCategory, LabTestTemplate}
 alias ThamaniDawa.Organizations
 alias ThamaniDawa.Organizations.Organization
 alias ThamaniDawa.Patients
 alias ThamaniDawa.Patients.Patient
-alias ThamaniDawa.PharmacyLogs
-alias ThamaniDawa.PharmacyLogs.PharmacyLog
+alias ThamaniDawa.PatientVisits
+alias ThamaniDawa.PatientVisits.PatientVisit
 alias ThamaniDawa.Prescriptions
-alias ThamaniDawa.Prescriptions.{DispensedItem, Prescription, PrescriptionItem}
+alias ThamaniDawa.Prescriptions.{Prescription, PrescriptionItem}
 alias ThamaniDawa.Products
 alias ThamaniDawa.Products.Product
-alias ThamaniDawa.QualityAssuranceCharts
-alias ThamaniDawa.QualityAssuranceCharts.QualityAssuranceChart
 alias ThamaniDawa.Repo
-alias ThamaniDawa.ScanEvents
-alias ThamaniDawa.ScanEvents.ScanEvent
 alias ThamaniDawa.Sites
 alias ThamaniDawa.Sites.Site
 alias ThamaniDawa.Suppliers
@@ -334,60 +326,15 @@ prescription_item =
     end
   )
 
-dispensed_item =
-  case Repo.get_by(DispensedItem,
-         organization_id: organization_id,
-         prescription_item_id: prescription_item.id
-       ) do
-    nil ->
-      {:ok, dispensed_item} =
-        Prescriptions.dispense_item(organization_id, prescription_item.id, pharmacist.id, 4)
+_dispensed_item =
+  if prescription_item.quantity_dispensed < prescription_item.quantity_prescribed do
+    {:ok, dispensed_item} =
+      Prescriptions.dispense_item(organization_id, prescription_item.id, pharmacist.id, 4)
 
-      dispensed_item
-
-    dispensed_item ->
-      dispensed_item
+    dispensed_item
+  else
+    prescription_item
   end
-
-_category =
-  insert_or_get.(
-    LabTestCategory,
-    %{organization_id: organization_id, name: "Hematology"},
-    %{
-      description: "Blood count and morphology tests",
-      display_order: 1
-    },
-    fn attrs -> LabTestTemplates.create_lab_test_category(organization_id, attrs) end
-  )
-
-cbc_template =
-  insert_or_get.(
-    LabTestTemplate,
-    %{organization_id: organization_id, name: "Complete Blood Count"},
-    %{
-      short_name: "CBC",
-      display_order: 1,
-      field_definitions: [
-        %{
-          key: "hemoglobin",
-          label: "Hemoglobin",
-          unit: "g/dL",
-          data_type: :numeric,
-          low: 12.0,
-          high: 17.5
-        },
-        %{
-          key: "wbc",
-          label: "White blood cells",
-          unit: "10^9/L",
-          data_type: :numeric,
-          low: 4.0,
-          high: 11.0
-        }
-      ]
-    },
-    fn attrs -> LabTestTemplates.create_lab_test_template(organization_id, attrs) end
-  )
 
 cbc_test =
   insert_or_get.(
@@ -395,9 +342,21 @@ cbc_test =
     %{organization_id: organization_id, name: "Complete Blood Count"},
     %{
       price: Decimal.new("800.00"),
-      subsidized_price: Decimal.new("500.00")
+      field_definitions: %{},
+      category: "Hematology"
     },
     fn attrs -> LabTests.create_lab_test(organization_id, attrs) end
+  )
+
+patient_visit =
+  insert_or_get.(
+    PatientVisit,
+    %{organization_id: organization_id, patient_id: patient.id, site_id: lab_site.id},
+    %{
+      user_id: lab_technician.id,
+      visit_type: :lab
+    },
+    fn attrs -> PatientVisits.create_patient_visit(organization_id, attrs) end
   )
 
 lab_order =
@@ -410,43 +369,43 @@ lab_order =
     },
     %{
       site_id: lab_site.id,
+      patient_visit_id: patient_visit.id,
       ordered_by_id: lab_technician.id,
       urgency: "routine",
       payment_type: "cash",
       has_paid: true,
       total_amount: Decimal.new("800.00"),
-      sample_collection_date: today,
-      sample_collection_description: "Venous blood sample"
+      lab_request: "Complete blood count",
+      referring_facility: "Demo Care Diagnostic Lab",
+      referring_doctor: "Dr. Demo",
+      referred_date: ~T[09:00:00]
     },
     fn attrs -> LabOrders.create_lab_order(organization_id, attrs) end
   )
 
-lab_order_test =
+lab_order_result =
   insert_or_get.(
-    LabOrderTest,
+    LabOrderResult,
     %{
       organization_id: organization_id,
       lab_order_id: lab_order.id,
       lab_test_id: cbc_test.id
     },
     %{
-      template_id: cbc_template.id
+      sample_collection_description: 1
     },
-    fn attrs -> LabOrders.create_lab_order_test(organization_id, lab_order.id, attrs) end
+    fn attrs -> LabOrders.create_lab_order_result(organization_id, lab_order.id, attrs) end
   )
 
-if lab_order_test.status == :pending do
-  {:ok, lab_order_test} =
-    LabOrders.mark_sample_collected(organization_id, lab_order_test.id, today)
+if lab_order_result.status == :pending do
+  {:ok, lab_order_result} =
+    LabOrders.mark_sample_collected(organization_id, lab_order_result.id, today)
 
-  {:ok, lab_order_test} =
-    LabOrders.record_result(organization_id, lab_order_test.id, lab_technician.id, %{
+  {:ok, _lab_order_result} =
+    LabOrders.record_result(organization_id, lab_order_result.id, lab_technician.id, %{
       "hemoglobin" => "13.4",
       "wbc" => "7.2"
     })
-
-  {:ok, _lab_order_test} =
-    LabOrders.verify_lab_order_test(organization_id, lab_order_test.id, admin.id)
 end
 
 if Repo.get_by(LabConsumableUsage,
@@ -459,98 +418,6 @@ if Repo.get_by(LabConsumableUsage,
     LabOrders.record_consumable_usage(organization_id, reagent_batch.id, lab_technician.id, 1,
       lab_order_id: lab_order.id,
       purpose: "CBC reagent use"
-    )
-end
-
-month = today.month
-year = today.year
-
-if Repo.get_by(PharmacyLog,
-     organization_id: organization_id,
-     site_id: pharmacy_site.id,
-     log_type: "fridge_temperature",
-     month: month,
-     year: year
-   ) == nil do
-  {:ok, _log} =
-    PharmacyLogs.record_daily_entry(
-      organization_id,
-      pharmacy_site.id,
-      "fridge_temperature",
-      month,
-      year,
-      today.day,
-      %{
-        "reading" => "4.2 C",
-        "notes" => "Seed opening reading",
-        "recorded_by_id" => pharmacist.id
-      }
-    )
-end
-
-if Repo.get_by(DangerousDrugRegister,
-     organization_id: organization_id,
-     site_id: pharmacy_site.id,
-     product_id: morphine.id,
-     month: month,
-     year: year
-   ) == nil do
-  {:ok, _register} =
-    DangerousDrugRegisters.record_entry(
-      organization_id,
-      pharmacy_site.id,
-      morphine.id,
-      month,
-      year,
-      %{
-        "quantity" => "2",
-        "balance" => Integer.to_string(morphine_batch.remaining_quantity),
-        "dispensed_to" => "Demo ward stock",
-        "recorded_by_id" => pharmacist.id,
-        "recorded_at" => DateTime.to_iso8601(now)
-      }
-    )
-end
-
-if Repo.get_by(QualityAssuranceChart,
-     organization_id: organization_id,
-     site_id: lab_site.id,
-     chart_type: "control_chart",
-     month: month,
-     year: year
-   ) == nil do
-  {:ok, _chart} =
-    QualityAssuranceCharts.record_daily_entry(
-      organization_id,
-      lab_site.id,
-      "control_chart",
-      month,
-      year,
-      today.day,
-      %{
-        "reading" => "within range",
-        "notes" => "Seed QC control",
-        "recorded_by_id" => lab_technician.id
-      }
-    )
-end
-
-scan_payload =
-  "01#{paracetamol_batch.gtin}10#{paracetamol_batch.batch_no}#{<<29>>}414#{pharmacy_site.gln}"
-
-if Repo.get_by(ScanEvent,
-     organization_id: organization_id,
-     event_type: :dispense,
-     reference_id: dispensed_item.id,
-     user_id: pharmacist.id
-   ) == nil do
-  {:ok, _scan_event} =
-    ScanEvents.log_scan_event(
-      organization_id,
-      :dispense,
-      dispensed_item.id,
-      pharmacist.id,
-      scan_payload
     )
 end
 

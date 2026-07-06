@@ -33,14 +33,18 @@ defmodule ThamaniDawa.SitesTest do
                Sites.create_site(organization_a.id, %{
                  name: "HQ",
                  site_type: :warehouse,
-                 gln: "0614141000005"
+                 gln: "0614141000005",
+                 lat: 0,
+                 long: 0
                })
 
       assert {:error, changeset} =
                Sites.create_site(organization_b.id, %{
                  name: "Branch",
                  site_type: :pharmacy,
-                 gln: "0614141000005"
+                 gln: "0614141000005",
+                 lat: 1,
+                 long: 1
                })
 
       assert %{gln: ["has already been taken"]} = errors_on(changeset)
@@ -50,10 +54,20 @@ defmodule ThamaniDawa.SitesTest do
       organization = organization_fixture()
 
       assert {:ok, _site_a} =
-               Sites.create_site(organization.id, %{name: "A", site_type: :pharmacy})
+               Sites.create_site(organization.id, %{
+                 name: "A",
+                 site_type: :pharmacy,
+                 lat: 0,
+                 long: 0
+               })
 
       assert {:ok, _site_b} =
-               Sites.create_site(organization.id, %{name: "B", site_type: :pharmacy})
+               Sites.create_site(organization.id, %{
+                 name: "B",
+                 site_type: :pharmacy,
+                 lat: 1,
+                 long: 1
+               })
     end
   end
 
@@ -65,7 +79,9 @@ defmodule ThamaniDawa.SitesTest do
         Sites.create_site(organization.id, %{
           name: "HQ",
           site_type: :warehouse,
-          gln: "0614141000005"
+          gln: "0614141000005",
+          lat: 0,
+          long: 0
         })
 
       assert {:ok, found} = Sites.get_site_by_gln(organization.id, "0614141000005")
@@ -80,7 +96,9 @@ defmodule ThamaniDawa.SitesTest do
         Sites.create_site(organization_a.id, %{
           name: "HQ",
           site_type: :warehouse,
-          gln: "0614141000005"
+          gln: "0614141000005",
+          lat: 0,
+          long: 0
         })
 
       assert {:error, :not_found} = Sites.get_site_by_gln(organization_b.id, "0614141000005")

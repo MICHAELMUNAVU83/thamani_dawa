@@ -21,9 +21,9 @@ defmodule ThamaniDawaWeb.VerificationQueueLive do
     allowed_lab_order_ids =
       lab_orders |> SiteScoping.for_current_site(scope) |> MapSet.new(& &1.id)
 
-    completed_tests =
+    completed_results =
       organization_id
-      |> LabOrders.list_lab_order_tests()
+      |> LabOrders.list_lab_order_results()
       |> Enum.filter(
         &(&1.status == :completed and MapSet.member?(allowed_lab_order_ids, &1.lab_order_id))
       )
@@ -31,47 +31,27 @@ defmodule ThamaniDawaWeb.VerificationQueueLive do
     lab_tests_by_id = organization_id |> LabTests.list_lab_tests() |> Map.new(&{&1.id, &1})
 
     performer_ids =
-      completed_tests |> Enum.map(& &1.performed_by_id) |> Enum.filter(& &1) |> Enum.uniq()
+      completed_results |> Enum.map(& &1.performed_by_id) |> Enum.filter(& &1) |> Enum.uniq()
 
     users_by_id = Map.new(performer_ids, &{&1, Accounts.get_user!(organization_id, &1)})
 
     patient_ids =
-      completed_tests |> Enum.map(&lab_orders_by_id[&1.lab_order_id].patient_id) |> Enum.uniq()
+      completed_results
+      |> Enum.map(&lab_orders_by_id[&1.lab_order_id].patient_id)
+      |> Enum.uniq()
 
     patients_by_id = Map.new(patient_ids, &{&1, Patients.get_patient!(organization_id, &1)})
 
     socket
-    |> assign(:completed_tests, completed_tests)
+    |> assign(:completed_results, completed_results)
     |> assign(:lab_orders_by_id, lab_orders_by_id)
     |> assign(:lab_tests_by_id, lab_tests_by_id)
     |> assign(:users_by_id, users_by_id)
     |> assign(:patients_by_id, patients_by_id)
   end
 
-  def handle_event("verify", %{"id" => id}, socket) do
-    organization_id = socket.assigns.current_scope.organization_id
-    verifier_id = socket.assigns.current_scope.user.id
-
-    case LabOrders.verify_lab_order_test(organization_id, String.to_integer(id), verifier_id) do
-      {:ok, _test} ->
-        {:noreply,
-         socket
-         |> put_flash(:info, "Result verified.")
-         |> assign_queue()}
-
-      {:error, :same_technician} ->
-        {:noreply, put_flash(socket, :error, "A different technician must verify this result.")}
-
-      {:error, :not_completed} ->
-        {:noreply, put_flash(socket, :error, "This result hasn't been entered yet.")}
-
-      {:error, reason} ->
-        {:noreply, put_flash(socket, :error, "Couldn't verify that result: #{inspect(reason)}")}
-    end
-  end
-
-  defp patient_name(patients_by_id, lab_orders_by_id, test) do
-    patients_by_id[lab_orders_by_id[test.lab_order_id].patient_id].full_name
+  defp patient_name(patients_by_id, lab_orders_by_id, result) do
+    patients_by_id[lab_orders_by_id[result.lab_order_id].patient_id].full_name
   end
 
   defp test_name(lab_tests_by_id, lab_test_id) do
@@ -87,20 +67,17 @@ defmodule ThamaniDawaWeb.VerificationQueueLive do
   def render(assigns) do
     ~H"""
     <Layouts.app_shell flash={@flash} current_scope={@current_scope}>
-      <.header>Verification queue</.header>
+      <.header>Completed results</.header>
 
-      <.table id="verification-queue" rows={@completed_tests}>
-        <:col :let={test} label="Patient">
-          {patient_name(@patients_by_id, @lab_orders_by_id, test)}
+      <.table id="verification-queue" rows={@completed_results}>
+        <:col :let={result} label="Patient">
+          {patient_name(@patients_by_id, @lab_orders_by_id, result)}
         </:col>
-        <:col :let={test} label="Test">{test_name(@lab_tests_by_id, test.lab_test_id)}</:col>
-        <:col :let={test} label="Performed by">
-          {performer_name(@users_by_id, test.performed_by_id)}
+        <:col :let={result} label="Test">{test_name(@lab_tests_by_id, result.lab_test_id)}</:col>
+        <:col :let={result} label="Performed by">
+          {performer_name(@users_by_id, result.performed_by_id)}
         </:col>
-        <:col :let={test} label="Performed on">{test.test_performed_on}</:col>
-        <:action :let={test}>
-          <.button type="button" variant="primary" phx-click="verify" phx-value-id={test.id}>Verify</.button>
-        </:action>
+        <:col :let={result} label="Performed on">{result.test_performed_on}</:col>
       </.table>
     </Layouts.app_shell>
     """

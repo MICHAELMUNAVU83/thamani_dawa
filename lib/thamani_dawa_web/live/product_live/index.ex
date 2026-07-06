@@ -3,9 +3,16 @@ defmodule ThamaniDawaWeb.ProductLive.Index do
 
   alias ThamaniDawa.Products
   alias ThamaniDawa.Products.Product
+  alias ThamaniDawa.Sites
 
   def mount(_params, _session, socket) do
-    {:ok, socket |> assign(:search, "") |> assign_products()}
+    organization_id = socket.assigns.current_scope.organization_id
+
+    {:ok,
+     socket
+     |> assign(:search, "")
+     |> assign(:sites, Sites.list_sites(organization_id))
+     |> assign_products()}
   end
 
   def handle_params(params, _url, socket) do
@@ -76,14 +83,14 @@ defmodule ThamaniDawaWeb.ProductLive.Index do
       products
     else
       Enum.filter(products, fn product ->
-        [product.generic_name, product.brand_name, product.name, product.gtin, product.category]
+        [product.generic_name, product.brand_name, product.gtin, product.category]
         |> Enum.filter(& &1)
         |> Enum.any?(&String.contains?(String.downcase(&1), search))
       end)
     end
   end
 
-  defp product_name(product), do: product.generic_name || product.name || "(unnamed)"
+  defp product_name(product), do: product.generic_name || product.brand_name || "(unnamed)"
 
   def render(assigns) do
     ~H"""
@@ -102,16 +109,16 @@ defmodule ThamaniDawaWeb.ProductLive.Index do
           </h2>
           <form phx-submit="save">
             <.input
-              field={@form[:product_type]}
+              field={@form[:site_id]}
               type="select"
-              label="Type"
-              options={Enum.map(Product.product_types(), &{Phoenix.Naming.humanize(&1), &1})}
-              prompt="Choose a type"
+              label="Site"
+              options={Enum.map(@sites, &{&1.name, &1.id})}
+              prompt="Choose a site"
               required
             />
-            <.input field={@form[:generic_name]} label="Generic name (drugs)" />
+            <.input field={@form[:price]} type="number" label="Price" required />
+            <.input field={@form[:generic_name]} label="Generic name" />
             <.input field={@form[:brand_name]} label="Brand name" />
-            <.input field={@form[:name]} label="Name (non-drug items)" />
             <.input field={@form[:category]} label="Category" />
             <.input field={@form[:uom]} label="Unit of measure" />
             <.input field={@form[:gtin]} label="GTIN" />
@@ -136,7 +143,6 @@ defmodule ThamaniDawaWeb.ProductLive.Index do
         row_click={&~p"/pharmacy/products/#{&1.id}"}
       >
         <:col :let={product} label="Name">{product_name(product)}</:col>
-        <:col :let={product} label="Type">{Phoenix.Naming.humanize(product.product_type)}</:col>
         <:col :let={product} label="Category">{product.category}</:col>
         <:col :let={product} label="GTIN">{product.gtin}</:col>
         <:action :let={product}>

@@ -38,7 +38,7 @@ defmodule ThamaniDawaWeb.PharmacyScanLive do
   end
 
   defp product_name(nil), do: nil
-  defp product_name(product), do: product.generic_name || product.name || "(unnamed)"
+  defp product_name(product), do: product.generic_name || product.brand_name || "(unnamed)"
 
   def render(assigns) do
     ~H"""
@@ -69,7 +69,7 @@ defmodule ThamaniDawaWeb.PharmacyScanLive do
           <.list>
             <:item title="Product">{product_name(@product)}</:item>
             <:item title="Remaining quantity">{@batch.remaining_quantity}</:item>
-            <:item title="Expiry">{@batch.expiry}</:item>
+            <:item title="Expiry">{@batch.expiry_date}</:item>
           </.list>
         </div>
 

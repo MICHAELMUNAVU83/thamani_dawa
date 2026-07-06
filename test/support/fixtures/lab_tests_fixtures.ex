@@ -9,7 +9,11 @@ defmodule ThamaniDawa.LabTestsFixtures do
   def valid_lab_test_attributes(attrs \\ %{}) do
     Enum.into(attrs, %{
       name: "Full Blood Count #{System.unique_integer()}",
-      price: Decimal.new("500.00")
+      price: Decimal.new("500.00"),
+      category: "Haematology",
+      field_definitions: %{
+        "haemoglobin" => %{"type" => "number", "unit" => "g/dL"}
+      }
     })
   end
 

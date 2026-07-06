@@ -31,7 +31,8 @@ defmodule ThamaniDawa.PatientsTest do
                  full_name: "Jane Doe",
                  age: 34,
                  gender: "female",
-                 phone: "0700000000"
+                 phone: "0700000000",
+                 gsrn: 1
                })
 
       assert patient.organization_id == organization.id
@@ -45,7 +46,8 @@ defmodule ThamaniDawa.PatientsTest do
       assert {:ok, %Patient{} = patient} =
                Patients.create_patient(organization.id, %{
                  full_name: "John Doe",
-                 date_of_birth: ~D[1990-01-01]
+                 date_of_birth: ~D[1990-01-01],
+                 gsrn: 2
                })
 
       assert patient.date_of_birth == ~D[1990-01-01]
@@ -56,10 +58,18 @@ defmodule ThamaniDawa.PatientsTest do
       organization_b = organization_fixture()
 
       assert {:ok, _} =
-               Patients.create_patient(organization_a.id, %{full_name: "Jane Doe", age: 30})
+               Patients.create_patient(organization_a.id, %{
+                 full_name: "Jane Doe",
+                 age: 30,
+                 gsrn: 3
+               })
 
       assert {:ok, _} =
-               Patients.create_patient(organization_b.id, %{full_name: "Jane Doe", age: 30})
+               Patients.create_patient(organization_b.id, %{
+                 full_name: "Jane Doe",
+                 age: 30,
+                 gsrn: 4
+               })
     end
   end
 

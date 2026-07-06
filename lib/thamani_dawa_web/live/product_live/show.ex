@@ -16,7 +16,7 @@ defmodule ThamaniDawaWeb.ProductLive.Show do
     {:ok, assign(socket, product: product, batches: batches)}
   end
 
-  defp product_name(product), do: product.generic_name || product.name || "(unnamed)"
+  defp product_name(product), do: product.generic_name || product.brand_name || "(unnamed)"
 
   def render(assigns) do
     ~H"""
@@ -30,7 +30,6 @@ defmodule ThamaniDawaWeb.ProductLive.Show do
       </.header>
 
       <.list>
-        <:item title="Type">{Phoenix.Naming.humanize(@product.product_type)}</:item>
         <:item title="Brand name">{@product.brand_name}</:item>
         <:item title="Category">{@product.category}</:item>
         <:item title="Unit of measure">{@product.uom}</:item>
@@ -38,14 +37,14 @@ defmodule ThamaniDawaWeb.ProductLive.Show do
         <:item title="OTC">{if @product.is_otc, do: "Yes", else: "No"}</:item>
         <:item title="Dangerous drug">{if @product.is_dangerous_drug, do: "Yes", else: "No"}</:item>
         <:item title="Reorder level">{@product.reorder_level}</:item>
+        <:item title="Price">{@product.price}</:item>
       </.list>
 
       <.header class="mt-6">Batches</.header>
       <.table id="batches" rows={@batches}>
         <:col :let={batch} label="Batch no.">{batch.batch_no}</:col>
-        <:col :let={batch} label="Expiry">{batch.expiry}</:col>
+        <:col :let={batch} label="Expiry">{batch.expiry_date}</:col>
         <:col :let={batch} label="Remaining">{batch.remaining_quantity}</:col>
-        <:col :let={batch} label="Active">{if batch.is_active, do: "Yes", else: "No"}</:col>
       </.table>
     </Layouts.app_shell>
     """

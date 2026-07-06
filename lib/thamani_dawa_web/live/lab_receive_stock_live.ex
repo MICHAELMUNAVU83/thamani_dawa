@@ -6,7 +6,6 @@ defmodule ThamaniDawaWeb.LabReceiveStockLive do
   alias ThamaniDawa.GS1Decoder
   alias ThamaniDawa.LabOrders
   alias ThamaniDawa.Products
-  alias ThamaniDawa.ScanEvents
   alias ThamaniDawa.Sites
   alias ThamaniDawa.Suppliers
   alias ThamaniDawaWeb.SiteScoping
@@ -21,7 +20,7 @@ defmodule ThamaniDawaWeb.LabReceiveStockLive do
     products =
       organization_id
       |> Products.list_products()
-      |> Enum.filter(&(&1.product_type in [:lab_consumable, :general_supply]))
+      |> SiteScoping.for_current_site(scope)
 
     usable_batches =
       organization_id
@@ -51,7 +50,7 @@ defmodule ThamaniDawaWeb.LabReceiveStockLive do
             gtin: parsed.gtin,
             batch_no: parsed.batch_no,
             manufacture_date: parsed.production_date,
-            expiry: parsed.expiry_date
+            expiry_date: parsed.expiry_date
           }
           |> Enum.reject(fn {_k, v} -> is_nil(v) end)
           |> Map.new()
@@ -80,17 +79,7 @@ defmodule ThamaniDawaWeb.LabReceiveStockLive do
       })
 
     case Batches.create_batch(scope.organization_id, attrs) do
-      {:ok, batch} ->
-        if socket.assigns.gs1_used do
-          ScanEvents.log_scan_event(
-            scope.organization_id,
-            :receipt,
-            batch.id,
-            user.id,
-            socket.assigns.raw_gs1
-          )
-        end
-
+      {:ok, _batch} ->
         {:noreply,
          socket
          |> put_flash(:info, "Stock received.")
@@ -144,8 +133,11 @@ defmodule ThamaniDawaWeb.LabReceiveStockLive do
 
   defp batch_label(batch, products_by_id) do
     product = products_by_id[batch.product_id]
-    name = (product && (product.generic_name || product.name)) || "(unknown product)"
-    "#{name} — #{batch.batch_no} (#{batch.remaining_quantity} left, exp. #{batch.expiry})"
+
+    name =
+      (product && (product.generic_name || product.brand_name)) || "(unknown product)"
+
+    "#{name} — #{batch.batch_no} (#{batch.remaining_quantity} left, exp. #{batch.expiry_date})"
   end
 
   def render(assigns) do

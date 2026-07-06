@@ -9,7 +9,9 @@ defmodule ThamaniDawa.SitesFixtures do
   def valid_site_attributes(attrs \\ %{}) do
     Enum.into(attrs, %{
       name: "Main Site #{System.unique_integer()}",
-      site_type: :pharmacy
+      site_type: :pharmacy,
+      lat: 0,
+      long: 0
     })
   end
 

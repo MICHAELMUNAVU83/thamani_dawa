@@ -26,7 +26,7 @@ defmodule ThamaniDawaWeb.PrescriptionLive.Index do
     products =
       organization_id
       |> Products.list_products()
-      |> Enum.filter(&(&1.product_type == :drug))
+      |> SiteScoping.for_current_site(scope)
 
     socket
     |> assign(:patients, Patients.list_patients(organization_id))
@@ -221,7 +221,7 @@ defmodule ThamaniDawaWeb.PrescriptionLive.Index do
   end
 
   defp product_label(product) do
-    name = product.generic_name || product.name || "(unnamed)"
+    name = product.generic_name || product.brand_name || "(unnamed)"
     if product.brand_name, do: "#{name} (#{product.brand_name})", else: name
   end
 end

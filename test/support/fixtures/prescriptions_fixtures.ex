@@ -4,13 +4,17 @@ defmodule ThamaniDawa.PrescriptionsFixtures do
   """
 
   alias ThamaniDawa.OrganizationsFixtures
-  alias ThamaniDawa.PatientsFixtures
+  alias ThamaniDawa.PatientVisitsFixtures
   alias ThamaniDawa.Prescriptions
   alias ThamaniDawa.ProductsFixtures
-  alias ThamaniDawa.SitesFixtures
 
   def valid_prescription_attributes(attrs \\ %{}) do
-    Enum.into(attrs, %{prescriber_name: "Dr. Jane Doe"})
+    Enum.into(attrs, %{
+      doctors_note: "Take after meals",
+      source_facility: "General Hospital",
+      referring_doctor: "Dr. Jane Doe",
+      referral_date: ~T[09:00:00]
+    })
   end
 
   def valid_prescription_item_attributes(attrs \\ %{}) do
@@ -19,8 +23,8 @@ defmodule ThamaniDawa.PrescriptionsFixtures do
 
   @doc """
   Creates a prescription. Unless given, `organization_id` gets a fresh
-  organization, and `site_id`/`patient_id` get a fresh site/patient under
-  that organization.
+  organization, and `patient_visit_id` gets a fresh visit under that
+  organization.
   """
   def prescription_fixture(attrs \\ %{}) do
     {organization_id, attrs} =
@@ -28,17 +32,12 @@ defmodule ThamaniDawa.PrescriptionsFixtures do
         OrganizationsFixtures.organization_fixture().id
       end)
 
-    {site_id, attrs} =
-      Map.pop_lazy(attrs, :site_id, fn ->
-        SitesFixtures.site_fixture(%{organization_id: organization_id}).id
+    {patient_visit_id, attrs} =
+      Map.pop_lazy(attrs, :patient_visit_id, fn ->
+        PatientVisitsFixtures.patient_visit_fixture(%{organization_id: organization_id}).id
       end)
 
-    {patient_id, attrs} =
-      Map.pop_lazy(attrs, :patient_id, fn ->
-        PatientsFixtures.patient_fixture(%{organization_id: organization_id}).id
-      end)
-
-    attrs = Map.merge(attrs, %{site_id: site_id, patient_id: patient_id})
+    attrs = Map.put(attrs, :patient_visit_id, patient_visit_id)
 
     {:ok, prescription} =
       attrs

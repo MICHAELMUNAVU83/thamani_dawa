@@ -10,6 +10,7 @@ defmodule ThamaniDawa.Repo.Migrations.CreatePatients do
       add :gender, :string
       add :phone, :string
       add :national_id, :string
+      add :gsrn, :bigint, null: false
 
       timestamps(type: :utc_datetime)
     end
