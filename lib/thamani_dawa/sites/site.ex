@@ -2,7 +2,7 @@ defmodule ThamaniDawa.Sites.Site do
   use Ecto.Schema
   import Ecto.Changeset
 
-  @site_types [:pharmacy, :lab, :warehouse]
+  @site_types [:pharmacy, :lab, :pharmacy_lab, :warehouse]
 
   schema "sites" do
     field :organization_id, :id
@@ -21,8 +21,15 @@ defmodule ThamaniDawa.Sites.Site do
   def changeset(site, attrs) do
     site
     |> cast(attrs, [:name, :site_type, :gln, :address, :lat, :long, :is_active])
-    |> validate_required([:name, :site_type, :lat, :long])
+    |> validate_required([:name, :site_type, :gln, :address])
     |> unique_constraint(:gln)
+  end
+
+  @doc "Minimal changeset for system-created sites (signup default site) — no gln/address yet."
+  def default_changeset(site, attrs) do
+    site
+    |> cast(attrs, [:name, :site_type, :lat, :long, :is_active])
+    |> validate_required([:name, :site_type])
   end
 
   @doc "The valid site types, per §4.1 of project.md."
