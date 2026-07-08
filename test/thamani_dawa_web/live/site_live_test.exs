@@ -102,6 +102,9 @@ defmodule ThamaniDawaWeb.SiteLiveTest do
       |> render_submit()
 
       assert render(lv) =~ "Warehouse Branch"
+
+      site = ThamaniDawa.Repo.get_by!(ThamaniDawa.Sites.Site, name: "Warehouse Branch")
+      assert site.site_type == :warehouse
     end
 
     test "shows validation error when name is blank", %{conn: conn, admin: admin} do

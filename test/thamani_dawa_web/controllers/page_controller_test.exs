@@ -18,7 +18,8 @@ defmodule ThamaniDawaWeb.PageControllerTest do
 
   test "GET /contact", %{conn: conn} do
     conn = get(conn, ~p"/contact")
-    assert html_response(conn, 200) =~ "Contact"
-    assert %Phoenix.HTML.Form{} = conn.assigns.form
+    html = html_response(conn, 200)
+    assert html =~ "Contact"
+    assert html =~ "<form"
   end
 end
