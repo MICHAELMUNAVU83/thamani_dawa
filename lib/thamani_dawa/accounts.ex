@@ -58,7 +58,7 @@ defmodule ThamaniDawa.Accounts do
   Invites a staff member into `organization_id`. Creates an unconfirmed
   `users` row (no password yet) and returns a one-time invite token
   alongside it — the caller is responsible for emailing it via
-  `deliver_user_invite/3`. `organization_id` and `invited_by_id` are always
+  `deliver_user_invite/5`. `organization_id` and `invited_by_id` are always
   explicit arguments, never taken from `attrs`, so an admin can only invite
   staff into their own organization; a given `site_id` is validated to
   belong to that same organization.
