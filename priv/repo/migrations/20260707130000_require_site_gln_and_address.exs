@@ -3,8 +3,10 @@ defmodule ThamaniDawa.Repo.Migrations.RequireSiteGlnAndAddress do
 
   def change do
     alter table(:sites) do
-      modify :gln, :string, null: false, unique: true
+      modify :gln, :string, null: false
       modify :address, :string, null: false
     end
+
+    create unique_index(:sites, [:gln])
   end
 end
