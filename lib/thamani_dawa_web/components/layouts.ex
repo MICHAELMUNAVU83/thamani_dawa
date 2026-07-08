@@ -133,7 +133,7 @@ defmodule ThamaniDawaWeb.Layouts do
     <.page_navbar current_scope={@current_scope} />
 
     <main class="w-full">
-      <%= if assigns[:inner_content] do %>
+      <%= if @inner_content do %>
         {@inner_content}
       <% else %>
         {render_slot(@inner_block)}
