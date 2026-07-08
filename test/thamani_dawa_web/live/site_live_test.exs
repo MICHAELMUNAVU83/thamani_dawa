@@ -40,7 +40,14 @@ defmodule ThamaniDawaWeb.SiteLiveTest do
       {:ok, lv, _} = live(log_in_user(conn, admin), ~p"/org/sites/new")
 
       lv
-      |> form("#site-form", site: %{name: "Pharmacy Branch", site_type: :pharmacy})
+      |> form("#site-form",
+        site: %{
+          name: "Pharmacy Branch",
+          site_type: :pharmacy,
+          gln: "0612345678901",
+          address: "1 Test St"
+        }
+      )
       |> render_submit()
 
       assert render(lv) =~ "Pharmacy Branch"
@@ -50,7 +57,14 @@ defmodule ThamaniDawaWeb.SiteLiveTest do
       {:ok, lv, _} = live(log_in_user(conn, admin), ~p"/org/sites/new")
 
       lv
-      |> form("#site-form", site: %{name: "Lab Branch", site_type: :lab})
+      |> form("#site-form",
+        site: %{
+          name: "Lab Branch",
+          site_type: :lab,
+          gln: "0612345678902",
+          address: "2 Test St"
+        }
+      )
       |> render_submit()
 
       assert render(lv) =~ "Lab Branch"
@@ -60,7 +74,14 @@ defmodule ThamaniDawaWeb.SiteLiveTest do
       {:ok, lv, _} = live(log_in_user(conn, admin), ~p"/org/sites/new")
 
       lv
-      |> form("#site-form", site: %{name: "Combined Branch", site_type: :pharmacy_lab})
+      |> form("#site-form",
+        site: %{
+          name: "Combined Branch",
+          site_type: :pharmacy_lab,
+          gln: "0612345678903",
+          address: "3 Test St"
+        }
+      )
       |> render_submit()
 
       assert render(lv) =~ "Combined Branch"
