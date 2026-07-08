@@ -44,5 +44,21 @@ defmodule ThamaniDawa.Accounts.UserNotifierTest do
       refute email.text_body =~ "\r"
       assert email.text_body =~ "Jane Admin has invited you to join Acme Bcc: attacker@evil.com"
     end
+
+    test "coerces nil organization/inviter names to blank instead of the literal word \"nil\"" do
+      user = staff_fixture(%{name: "New Hire", role: :pharmacist})
+
+      assert {:ok, email} =
+               UserNotifier.deliver_invite(
+                 user,
+                 nil,
+                 nil,
+                 "http://localhost:4000/invites/abc123"
+               )
+
+      refute email.subject =~ "nil"
+      refute email.text_body =~ "nil"
+      assert email.subject == "You've been invited to  on Thamani Dawa"
+    end
   end
 end

@@ -41,6 +41,8 @@ defmodule ThamaniDawa.Accounts.UserNotifier do
     """)
   end
 
+  defp sanitize_header_value(nil), do: ""
+
   defp sanitize_header_value(value) do
     value
     |> to_string()
