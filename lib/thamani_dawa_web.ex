@@ -38,7 +38,9 @@ defmodule ThamaniDawaWeb do
 
   def controller do
     quote do
-      use Phoenix.Controller, formats: [:html, :json]
+      use Phoenix.Controller,
+        formats: [:html, :json],
+        layouts: [html: ThamaniDawaWeb.Layouts]
 
       use Gettext, backend: ThamaniDawaWeb.Gettext
 
@@ -86,6 +88,8 @@ defmodule ThamaniDawaWeb do
       import Phoenix.HTML
       # Core UI components
       import ThamaniDawaWeb.CoreComponents
+      # Marketing & legal page layout components
+      import ThamaniDawaWeb.PageComponents
 
       # Common modules used in templates
       alias Phoenix.LiveView.JS

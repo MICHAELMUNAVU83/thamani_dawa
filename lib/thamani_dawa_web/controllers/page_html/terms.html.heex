@@ -1,0 +1,409 @@
+<%!-- ============================================================
+     TERMS OF SERVICE — Thamani Dawa
+     Layout: <.legal_hero> / prose body with <.legal_section> / <.page_footer>
+     ============================================================ --%>
+
+<.legal_hero
+  title="Terms of Service"
+  subtitle="Please read these Terms carefully before using the Thamani Dawa pharmacy management platform. By accessing the platform you agree to be bound by them."
+  date_label="Effective: April 17, 2026"
+/>
+
+<%!-- Prose body --%>
+<section style="background: var(--thamani-snow); padding: 72px 24px 96px;">
+  <div class="max-w-3xl mx-auto">
+    <%!-- Agreement banner (unique to terms) --%>
+    <div style="background: var(--thamani-stone); border-radius: 16px; padding: 28px 32px; margin-bottom: 56px;">
+      <p style="font-size: 16px; line-height: 1.7; color: var(--thamani-forest);">
+        <strong>AGREEMENT TO TERMS.</strong>
+        These Terms of Service constitute a legally binding agreement between you and Thamani Dawa
+        ("we," "us," or "our") governing your access to and use of the Thamani Dawa pharmacy management
+        platform and any related services. If you do not agree with all of these Terms, you are prohibited
+        from using the platform and must discontinue use immediately.
+      </p>
+    </div>
+
+    <%!-- Table of contents --%>
+    <.legal_toc entries={[
+      {"operator-eligibility", "Operator Eligibility &amp; Account Requirements"},
+      {"intellectual-property", "Intellectual Property Rights"},
+      {"user-representations", "User Representations"},
+      {"prohibited-activities", "Prohibited Activities"},
+      {"platform-content", "Platform Content &amp; User-Submitted Data"},
+      {"third-party-links", "Third-Party Links &amp; Integrations"},
+      {"site-management", "Platform Management"},
+      {"privacy-policy", "Privacy Policy"},
+      {"term-termination", "Term &amp; Termination"},
+      {"modifications", "Modifications to the Platform"},
+      {"governing-law", "Governing Law — Kenya"},
+      {"dispute-resolution", "Dispute Resolution"},
+      {"corrections", "Corrections"},
+      {"disclaimer", "Disclaimer of Warranties"},
+      {"limitations-liability", "Limitations of Liability"},
+      {"indemnification", "Indemnification"},
+      {"user-data", "User Data &amp; Healthcare Records"},
+      {"electronic-comms", "Electronic Communications &amp; Signatures"},
+      {"miscellaneous", "Miscellaneous"},
+      {"contact-us", "Contact Us"}
+    ]} />
+
+    <hr style="border: none; border-top: 1px solid var(--thamani-stone); margin-bottom: 56px;" />
+
+    <%!-- §1 --%>
+    <.legal_section
+      id="operator-eligibility"
+      number={1}
+      title="Operator Eligibility &amp; Account Requirements"
+    >
+      <p style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter); margin-bottom: 12px;">
+        Thamani Dawa is a B2B platform for
+        <strong style="color: var(--thamani-forest);">licensed healthcare operators</strong>
+        in Kenya and other markets. By registering, you represent and warrant that:
+      </p>
+      <ul style="padding-left: 20px; display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px;">
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          Your organisation holds a current, valid pharmacy or laboratory operating licence issued by the relevant authority (e.g. the Kenya Pharmacy and Poisons Board).
+        </li>
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          You are at least 18 years of age and have the legal authority to enter into this agreement on behalf of your organisation.
+        </li>
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          All staff user accounts you create will be used only by currently employed, authorised personnel.
+        </li>
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          You will maintain the confidentiality of all account credentials and PIN codes and are responsible for all activity under your organisation's account.
+        </li>
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          You will notify us immediately at
+          <a href="mailto:hello@example.com" style="color: var(--thamani-forest);">hello@example.com</a>
+          of any unauthorised access or security breach.
+        </li>
+      </ul>
+      <p style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+        We reserve the right to verify licencing information and to suspend or terminate accounts where eligibility requirements are not met.
+      </p>
+    </.legal_section>
+
+    <%!-- §2 --%>
+    <.legal_section id="intellectual-property" number={2} title="Intellectual Property Rights">
+      <p style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter); margin-bottom: 12px;">
+        Unless otherwise indicated, the Thamani Dawa platform — including its source code, design, databases, functionality, software, and GS1 integration logic — is owned by or licensed to us and is protected by copyright, trademark, and other applicable intellectual property law.
+      </p>
+      <p style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter); margin-bottom: 12px;">
+        We grant you a limited, non-exclusive, non-transferable, revocable licence to access and use the platform for your internal business operations, subject to these Terms. You may not:
+      </p>
+      <ul style="padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          Copy, adapt, reverse-engineer, decompile, or disassemble any part of the platform.
+        </li>
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          Remove any copyright, trademark, or proprietary notices.
+        </li>
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          Sell, resell, rent, sublicence, or otherwise transfer access to the platform to a third party.
+        </li>
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          Use the platform to build a competing product or service.
+        </li>
+      </ul>
+    </.legal_section>
+
+    <%!-- §3 --%>
+    <.legal_section id="user-representations" number={3} title="User Representations">
+      <p style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter); margin-bottom: 12px;">
+        By using the platform, you represent and warrant that:
+      </p>
+      <ul style="padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          All registration information you submit is true, accurate, current, and complete.
+        </li>
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          You will maintain the accuracy of such information and promptly update it as necessary.
+        </li>
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          You will use the platform only for lawful purposes and in compliance with applicable Kenyan law, including the Pharmacy and Poisons Act (Cap 244) and the Kenya Data Protection Act 2019.
+        </li>
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          You have the legal capacity and authority to agree to these Terms on behalf of your organisation.
+        </li>
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          All patient data you process via the platform has been collected and is being processed in accordance with applicable healthcare and data protection law.
+        </li>
+      </ul>
+    </.legal_section>
+
+    <%!-- §4 --%>
+    <.legal_section id="prohibited-activities" number={4} title="Prohibited Activities">
+      <p style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter); margin-bottom: 12px;">
+        You may not access or use the platform for any purpose other than that for which we make it available. The following activities are strictly prohibited:
+      </p>
+      <ul style="padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          Systematically retrieving data or content to create a database or directory without our written permission.
+        </li>
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          Bypassing or disabling the PIN authentication gate for controlled substance dispensing or lab verification.
+        </li>
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          Uploading or transmitting viruses, malware, or any material that disrupts or interferes with the platform.
+        </li>
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          Using the platform to dispense, prescribe, or record controlled substances without holding a valid licence.
+        </li>
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          Falsifying GS1 barcodes, batch numbers, expiry dates, or any other traceability data.
+        </li>
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          Sharing your account credentials or PIN with persons who are not authorised staff members of your organisation.
+        </li>
+      </ul>
+    </.legal_section>
+
+    <%!-- §5 --%>
+    <.legal_section
+      id="platform-content"
+      number={5}
+      title="Platform Content &amp; User-Submitted Data"
+    >
+      <p style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter); margin-bottom: 12px;">
+        You retain full ownership of all data your organisation submits to the platform, including patient records, prescription data, batch records, and lab results ("Your Data"). By submitting Your Data you grant us a limited licence to host, process, and back up that data solely to provide you with the platform services.
+      </p>
+      <p style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter); margin-bottom: 12px;">
+        You are solely responsible for the accuracy, completeness, and legality of Your Data. We do not verify the clinical accuracy of dispensing decisions or lab results entered by your staff. You acknowledge that Thamani Dawa is an operational management platform, not a clinical decision support system.
+      </p>
+      <p style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+        We may use aggregated, anonymised, and de-identified data derived from platform usage to improve and develop the service.
+      </p>
+    </.legal_section>
+
+    <%!-- §6 --%>
+    <.legal_section id="third-party-links" number={6} title="Third-Party Links &amp; Integrations">
+      <p style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+        The platform may contain links to third-party websites or integrate with third-party services (such as GS1 registry lookups or external laboratory information systems). We have no control over the content or practices of such third parties and accept no responsibility for them. We encourage you to review the privacy notices and terms of any third-party service you access through the platform.
+      </p>
+    </.legal_section>
+
+    <%!-- §7 --%>
+    <.legal_section id="site-management" number={7} title="Platform Management">
+      <p style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter); margin-bottom: 12px;">
+        We reserve the right, but not the obligation, to:
+      </p>
+      <ul style="padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          Monitor the platform for violations of these Terms.
+        </li>
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          Take appropriate legal action against anyone who violates these Terms, including reporting to regulatory authorities.
+        </li>
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          Refuse, restrict access to, limit the availability of, or disable any of your contributions to the platform.
+        </li>
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          Manage the platform in a manner designed to protect our rights and property and to facilitate its proper functioning.
+        </li>
+      </ul>
+    </.legal_section>
+
+    <%!-- §8 --%>
+    <.legal_section id="privacy-policy" number={8} title="Privacy Policy">
+      <p style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+        We care about data privacy and security. Please review our <a
+          href="/privacy"
+          style="color: var(--thamani-forest); text-decoration: underline; text-underline-offset: 3px;"
+        >Privacy Notice</a>,
+        which is incorporated into these Terms by reference. By using the platform, you agree to be bound by our Privacy Notice.
+      </p>
+    </.legal_section>
+
+    <%!-- §9 --%>
+    <.legal_section id="term-termination" number={9} title="Term &amp; Termination">
+      <p style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter); margin-bottom: 12px;">
+        These Terms remain in full force while you use the platform. We may terminate or suspend your access immediately, without prior notice, if:
+      </p>
+      <ul style="padding-left: 20px; display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px;">
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          You breach any provision of these Terms.
+        </li>
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          Your pharmacy or laboratory operating licence is revoked or suspended.
+        </li>
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          We are required to do so by law or regulatory authority.
+        </li>
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          Your subscription payment lapses.
+        </li>
+      </ul>
+      <p style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+        Upon termination, your right to use the platform will immediately cease. We will provide you with an export of Your Data in a structured format for 30 days following termination, after which it may be deleted subject to applicable legal retention periods.
+      </p>
+    </.legal_section>
+
+    <%!-- §10 --%>
+    <.legal_section id="modifications" number={10} title="Modifications to the Platform">
+      <p style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+        We reserve the right to change, modify, or remove the contents of the platform at any time or for any reason at our sole discretion without notice. We may update these Terms at any time by revising this page. Continued use of the platform after any changes constitutes your acceptance of the revised Terms.
+      </p>
+    </.legal_section>
+
+    <%!-- §11 --%>
+    <.legal_section id="governing-law" number={11} title="Governing Law — Kenya">
+      <p style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+        These Terms shall be governed by and construed in accordance with the laws of the Republic of Kenya, without regard to its conflict of law provisions. You agree that any disputes arising out of or relating to these Terms or the platform shall be subject to the exclusive jurisdiction of the courts of Nairobi, Kenya, except as otherwise provided in the Dispute Resolution section below.
+      </p>
+    </.legal_section>
+
+    <%!-- §12 --%>
+    <.legal_section id="dispute-resolution" number={12} title="Dispute Resolution">
+      <h3 style="font-size: 17px; font-weight: 500; color: var(--thamani-forest); margin: 0 0 10px;">
+        Informal resolution
+      </h3>
+      <p style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter); margin-bottom: 20px;">
+        To expedite resolution and reduce costs, you agree to first attempt to negotiate any dispute informally for at least 30 days before initiating arbitration or litigation. Informal negotiations begin with written notice to <a
+          href="mailto:hello@example.com"
+          style="color: var(--thamani-forest);"
+        >hello@example.com</a>.
+      </p>
+      <h3 style="font-size: 17px; font-weight: 500; color: var(--thamani-forest); margin: 0 0 10px;">
+        Binding arbitration
+      </h3>
+      <p style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+        If informal resolution fails, you agree that any dispute shall be finally settled by binding arbitration administered by the Nairobi Centre for International Arbitration (NCIA) in accordance with its Arbitration Rules. The arbitration shall be conducted in Nairobi, Kenya, in the English language.
+      </p>
+    </.legal_section>
+
+    <%!-- §13 --%>
+    <.legal_section id="corrections" number={13} title="Corrections">
+      <p style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+        There may be information on the platform that contains typographical errors, inaccuracies, or omissions. We reserve the right to correct any errors, inaccuracies, or omissions and to change or update information at any time, without prior notice.
+      </p>
+    </.legal_section>
+
+    <%!-- §14 --%>
+    <.legal_section id="disclaimer" number={14} title="Disclaimer of Warranties">
+      <p style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter); margin-bottom: 12px;">
+        THE PLATFORM IS PROVIDED ON AN AS-IS AND AS-AVAILABLE BASIS. TO THE FULLEST EXTENT PERMITTED BY LAW, WE DISCLAIM ALL WARRANTIES, EXPRESS OR IMPLIED. WE MAKE NO WARRANTY THAT:
+      </p>
+      <ul style="padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          The platform will meet your specific clinical or operational requirements.
+        </li>
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          The platform will be uninterrupted, error-free, or free of viruses.
+        </li>
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          Information provided through the platform is clinically verified or suitable for clinical decision-making without independent professional verification.
+        </li>
+      </ul>
+    </.legal_section>
+
+    <%!-- §15 --%>
+    <.legal_section id="limitations-liability" number={15} title="Limitations of Liability">
+      <p style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter); margin-bottom: 12px;">
+        TO THE FULLEST EXTENT PERMITTED BY APPLICABLE LAW, IN NO EVENT WILL THAMANI DAWA, ITS DIRECTORS, EMPLOYEES, AGENTS, OR LICENSORS BE LIABLE FOR:
+      </p>
+      <ul style="padding-left: 20px; display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px;">
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          Any indirect, incidental, special, consequential, or punitive damages arising from your use of the platform.
+        </li>
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          Any loss of profits, revenue, data, goodwill, or other intangible losses.
+        </li>
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          Any clinical outcomes, patient harm, or regulatory penalties arising from reliance on platform data without independent professional verification.
+        </li>
+      </ul>
+      <p style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+        Our total liability to you for any claims arising under these Terms shall not exceed the fees paid by your organisation to us in the 12 months preceding the claim.
+      </p>
+    </.legal_section>
+
+    <%!-- §16 --%>
+    <.legal_section id="indemnification" number={16} title="Indemnification">
+      <p style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+        You agree to defend, indemnify, and hold harmless Thamani Dawa, its officers, directors, employees, and agents from and against any claims, liabilities, damages, judgments, awards, losses, costs, and expenses (including reasonable legal fees) arising from or relating to: (a) your use of the platform; (b) your violation of these Terms; (c) your violation of applicable healthcare, pharmacy, or data protection law; or (d) any patient harm or regulatory action arising from dispensing or clinical decisions made by your staff.
+      </p>
+    </.legal_section>
+
+    <%!-- §17 --%>
+    <.legal_section id="user-data" number={17} title="User Data &amp; Healthcare Records">
+      <p style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter); margin-bottom: 12px;">
+        You are the data controller for all personal data and patient records you process through Thamani Dawa. We act as your data processor. We will process such data only on your documented instructions and in accordance with our
+        <a href="/privacy" style="color: var(--thamani-forest);">Privacy Notice</a>
+        and any Data Processing Agreement entered into between us.
+      </p>
+      <p style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter); margin-bottom: 12px;">
+        You are responsible for:
+      </p>
+      <ul style="padding-left: 20px; display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px;">
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          Ensuring you have a valid legal basis for processing patient personal data through the platform.
+        </li>
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          Complying with the Kenya Data Protection Act 2019, including registering as a data controller with the ODPC where required.
+        </li>
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          Maintaining appropriate retention and deletion schedules for patient records in line with Kenya Pharmacy and Poisons Board requirements.
+        </li>
+      </ul>
+    </.legal_section>
+
+    <%!-- §18 --%>
+    <.legal_section
+      id="electronic-comms"
+      number={18}
+      title="Electronic Communications &amp; Signatures"
+    >
+      <p style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+        Visiting the platform, completing online forms, and clicking to accept these Terms constitutes electronic communication. You consent to receive communications from us electronically. YOU AGREE TO THE USE OF ELECTRONIC SIGNATURES, CONTRACTS, ORDERS, AND OTHER RECORDS, AND TO ELECTRONIC DELIVERY OF NOTICES, POLICIES, AND RECORDS OF TRANSACTIONS INITIATED OR COMPLETED BY US OR VIA THE PLATFORM.
+      </p>
+    </.legal_section>
+
+    <%!-- §19 --%>
+    <.legal_section id="miscellaneous" number={19} title="Miscellaneous">
+      <p style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter); margin-bottom: 12px;">
+        These Terms and any policies posted by us on the platform constitute the entire agreement between you and us regarding the subject matter herein. Our failure to exercise or enforce any right or provision of these Terms shall not constitute a waiver of such right or provision.
+      </p>
+      <p style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+        If any provision of these Terms is determined to be unlawful, void, or unenforceable, that provision shall be deemed severable and shall not affect the validity of any remaining provisions. No joint venture, partnership, employment, or agency relationship is created between you and Thamani Dawa as a result of these Terms or your use of the platform.
+      </p>
+    </.legal_section>
+
+    <%!-- §20 --%>
+    <.legal_section id="contact-us" number={20} title="Contact Us">
+      <p style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter); margin-bottom: 24px;">
+        To resolve a complaint regarding the platform or to receive further information, please contact us at:
+      </p>
+      <div style="background: var(--thamani-stone); border-radius: 16px; padding: 28px 32px; display: inline-block;">
+        <p style="font-size: 15px; font-weight: 500; color: var(--thamani-forest); margin-bottom: 8px;">
+          Thamani Dawa
+        </p>
+        <p style="font-size: 15px; color: var(--thamani-pewter); line-height: 1.7;">
+          Nairobi, Kenya<br /> Phone:
+          <a href="tel:+254799999999" style="color: var(--thamani-forest);">+254 799 999 999</a><br />
+          Email:
+          <a href="mailto:hello@example.com" style="color: var(--thamani-forest);">hello@example.com</a>
+        </p>
+      </div>
+      <p style="font-size: 15px; color: var(--thamani-pewter); margin-top: 20px;">
+        Prefer to talk it through first?
+        <a
+          href="/contact"
+          style="color: var(--thamani-forest); text-decoration: underline; text-underline-offset: 3px;"
+        >Book a 15-minute intro call</a>
+        before we begin working together.
+      </p>
+    </.legal_section>
+
+    <%!-- Attribution --%>
+    <div style="background: var(--thamani-stone); border-radius: 12px; padding: 20px 24px; margin-bottom: 40px;">
+      <p style="font-size: 13px; color: var(--thamani-pewter); line-height: 1.6;">
+        These Terms of Service combine custom terms for our client engagements with a base generated using Termly's Terms and Conditions Generator, styled to match the Thamani Dawa design system.
+      </p>
+    </div>
+
+    <.legal_page_nav />
+  </div>
+</section>
+
+<.page_footer active_link={:terms} />
