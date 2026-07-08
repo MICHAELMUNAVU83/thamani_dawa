@@ -22,6 +22,9 @@ defmodule ThamaniDawa.Accounts.UserNotifier do
 
   @doc "Delivers an invite email carrying the one-time invite link."
   def deliver_invite(%User{} = user, organization_name, invited_by_name, url) do
+    organization_name = sanitize_header_value(organization_name)
+    invited_by_name = sanitize_header_value(invited_by_name)
+
     deliver(user.email, "You've been invited to #{organization_name} on Thamani Dawa", """
 
     Hi #{user.name},
@@ -36,5 +39,12 @@ defmodule ThamaniDawa.Accounts.UserNotifier do
 
     — The Thamani Dawa Team
     """)
+  end
+
+  defp sanitize_header_value(value) do
+    value
+    |> to_string()
+    |> String.replace(~r/[\x00-\x1F\x7F]+/u, " ")
+    |> String.trim()
   end
 end

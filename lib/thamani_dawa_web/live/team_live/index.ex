@@ -24,11 +24,9 @@ defmodule ThamaniDawaWeb.TeamLive.Index do
 
     case Accounts.invite_user(organization_id, admin.id, attrs) do
       {:ok, user, encoded_token} ->
-        organization = Organizations.get_organization!(organization_id)
-
         Accounts.deliver_user_invite(
           user,
-          organization.name,
+          socket.assigns.organization.name,
           admin.name,
           encoded_token,
           fn token ->
@@ -56,6 +54,7 @@ defmodule ThamaniDawaWeb.TeamLive.Index do
     |> assign(:users, Accounts.list_users(organization_id))
     |> assign(:sites, sites)
     |> assign(:sites_by_id, sites_by_id)
+    |> assign_new(:organization, fn -> Organizations.get_organization!(organization_id) end)
   end
 
   defp site_name(sites_by_id, site_id) do
