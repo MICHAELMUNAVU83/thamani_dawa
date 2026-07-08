@@ -1,13 +1,139 @@
-<Layouts.unauthenticated flash={@flash}>
-  <h1 class="text-lg font-semibold mb-4">Log in</h1>
+<%!-- ============================================================
+     LOGIN — Thamani Dawa
+     Split: Forest Depths left panel · Snow White form right
+     Inputs:  <.thamani_input>
+     Buttons: <.thamani_btn>
+     ============================================================ --%>
+<div style="min-height: 100vh; display: flex; flex-direction: row;">
+  <%!-- Left decorative panel — Forest Depths, hidden on mobile --%>
+  <div
+    class="hidden lg:flex"
+    style="width: 46%; background: var(--thamani-forest); flex-direction: column; justify-content: space-between; padding: 48px 52px; position: relative; overflow: hidden;"
+  >
+    <%!-- Decorative lime orb — top right --%>
+    <div
+      aria-hidden="true"
+      style="position: absolute; top: -120px; right: -120px; width: 420px; height: 420px; border-radius: 50%; background: var(--thamani-lime); opacity: 0.08; pointer-events: none;"
+    >
+    </div>
+    <%!-- Decorative lime orb — bottom left --%>
+    <div
+      aria-hidden="true"
+      style="position: absolute; bottom: -80px; left: -80px; width: 280px; height: 280px; border-radius: 50%; background: var(--thamani-lime); opacity: 0.06; pointer-events: none;"
+    >
+    </div>
 
-  <.form for={@form} action={~p"/login"} method="post">
-    <.input field={@form[:email]} type="email" label="Email" required />
-    <.input field={@form[:password]} type="password" label="Password" required />
-    <.button variant="primary" class="w-full mt-2">Log in</.button>
-  </.form>
+    <%!-- Brand mark --%>
+    <a
+      href="/"
+      style="font-size: 17px; font-weight: 500; color: var(--thamani-snow); text-decoration: none; letter-spacing: -0.01em; position: relative;"
+    >
+      Thamani Dawa
+    </a>
 
-  <p class="text-sm mt-4">
-    Don't have an account? <.link navigate={~p"/signup"} class="link">Sign up</.link>
-  </p>
-</Layouts.unauthenticated>
+    <%!-- Mid copy --%>
+    <div style="position: relative;">
+      <span
+        class="thamani-badge"
+        style="background: var(--thamani-lime); color: var(--thamani-forest); font-size: 11px; margin-bottom: 24px; display: inline-flex;"
+      >
+        GS1 Compliant · Built for Kenya
+      </span>
+      <h2 style="font-size: clamp(28px, 2.8vw, 40px); font-weight: 350; letter-spacing: -0.4px; line-height: 1.15; color: var(--thamani-snow); text-wrap: balance; margin: 16px 0 20px;">
+        The pharmacy OS for modern Kenya.
+      </h2>
+      <p style="font-size: 16px; line-height: 1.65; color: rgba(252,252,247,0.55); max-width: 340px;">
+        GS1 barcode scanning, dispensing, labs, and multi-site stock — all in one compliant platform.
+      </p>
+    </div>
+
+    <%!-- Testimonial footer --%>
+    <div style="position: relative; border-top: 1px solid rgba(252,252,247,0.1); padding-top: 28px;">
+      <p style="font-size: 15px; font-weight: 350; color: rgba(252,252,247,0.75); line-height: 1.55; font-style: italic; margin-bottom: 16px;">
+        "ThamaniDawa is the operating system our network was missing."
+      </p>
+      <p style="font-size: 13px; font-weight: 500; color: rgba(252,252,247,0.45);">
+        Dr. Amina Kariuki · Head of Pharmacy, Nairobi General
+      </p>
+    </div>
+  </div>
+
+  <%!-- Right form panel — Snow White --%>
+  <div style="flex: 1; background: var(--thamani-snow); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 48px 24px;">
+    <%!-- Mobile brand mark (hidden on lg) --%>
+    <a
+      href="/"
+      class="lg:hidden"
+      style="font-size: 16px; font-weight: 500; color: var(--thamani-forest); text-decoration: none; letter-spacing: -0.01em; margin-bottom: 40px; align-self: flex-start;"
+    >
+      Thamani Dawa
+    </a>
+
+    <div style="width: 100%; max-width: 380px;">
+      <%!-- Flash messages --%>
+      <.flash kind={:error} flash={@flash} />
+      <.flash kind={:info} flash={@flash} />
+
+      <%!-- Heading --%>
+      <h1 style="font-size: 32px; font-weight: 350; letter-spacing: -0.4px; line-height: 1.15; color: var(--thamani-forest); margin-bottom: 8px;">
+        Welcome back
+      </h1>
+      <p style="font-size: 15px; color: var(--thamani-pewter); line-height: 1.5; margin-bottom: 40px;">
+        Log in to your Thamani Dawa account.
+      </p>
+
+      <%!-- Form --%>
+      <.form for={@form} id="login-form" action={~p"/login"} method="post">
+        <.thamani_input
+          field={@form[:email]}
+          type="email"
+          label="Email address"
+          placeholder="you@yourpharmacy.com"
+          autocomplete="email"
+          required
+        />
+
+        <.thamani_input
+          field={@form[:password]}
+          type="password"
+          label="Password"
+          placeholder="••••••••"
+          autocomplete="current-password"
+          class="mb-8"
+          required
+        />
+
+        <.thamani_btn id="login-submit" type="submit" variant="primary">
+          Log in
+        </.thamani_btn>
+      </.form>
+
+      <%!-- Sign-up link --%>
+      <p style="text-align: center; font-size: 14px; color: var(--thamani-pewter); margin-top: 28px;">
+        Don't have an account?
+        <.link
+          navigate={~p"/signup"}
+          style="color: var(--thamani-forest); text-decoration: underline; text-underline-offset: 3px; font-weight: 500;"
+        >
+          Get started here
+        </.link>
+      </p>
+    </div>
+
+    <%!-- Footer legal links (mobile only) --%>
+    <div
+      class="lg:hidden"
+      style="margin-top: 48px; display: flex; gap: 20px; align-items: center;"
+    >
+      <a
+        href="/privacy"
+        style="font-size: 12px; color: var(--thamani-subtle); text-decoration: none;"
+      >Privacy</a>
+      <span style="font-size: 12px; color: var(--thamani-stone);">·</span>
+      <a
+        href="/terms"
+        style="font-size: 12px; color: var(--thamani-subtle); text-decoration: none;"
+      >Terms</a>
+    </div>
+  </div>
+</div>

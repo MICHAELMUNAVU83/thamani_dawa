@@ -1,0 +1,44 @@
+<section
+  style="background: #fcfcf7; min-height: calc(100vh - 64px);"
+  class="flex items-center justify-center py-24 px-6 sm:px-10"
+>
+  <div class="max-w-2xl w-full">
+    <h1
+      class="mb-6 text-center"
+      style="font-size: clamp(32px, 4vw, 42px); font-weight: 350; letter-spacing: -0.72px; color: #1c3a13;"
+    >
+      Contact Us
+    </h1>
+    <p class="text-center mb-10" style="font-size: 18px; color: #666666;">
+      Have a question or need support? We'd love to hear from you.
+    </p>
+
+    <div style="background: #ffffff; border-radius: 16px; padding: 40px; box-shadow: 0 4px 24px rgba(0,0,0,0.04); border: 1px solid #eeeee9;">
+      <.form for={@form} class="space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <.thamani_input field={@form[:name]} label="Full Name" placeholder="Jane Doe" required />
+          <.thamani_input
+            field={@form[:email]}
+            type="email"
+            label="Email Address"
+            placeholder="jane@example.com"
+            required
+          />
+        </div>
+        <.thamani_input
+          field={@form[:message]}
+          type="textarea"
+          label="Message"
+          rows="5"
+          placeholder="How can we help?"
+          required
+        />
+        <.thamani_btn variant="primary" type="submit" class="w-full mt-4">
+          Send Message
+        </.thamani_btn>
+      </.form>
+    </div>
+  </div>
+</section>
+
+<.page_footer active_link={:contact} />

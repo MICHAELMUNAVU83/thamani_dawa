@@ -7,6 +7,8 @@ defmodule ThamaniDawaWeb.SessionController do
   import Phoenix.Component, only: [to_form: 2]
   import ThamaniDawaWeb.UserAuth, only: [log_in_user: 2, log_out_user: 1]
 
+  plug :put_layout, [html: {ThamaniDawaWeb.Layouts, :root}] when action in [:new, :create]
+
   def new(conn, _params) do
     render(conn, :new, form: to_form(%{"email" => "", "password" => ""}, as: nil))
   end

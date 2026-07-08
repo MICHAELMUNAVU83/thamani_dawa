@@ -22,6 +22,10 @@ defmodule ThamaniDawaWeb.Router do
 
     get "/", PageController, :home
 
+    get "/privacy", PageController, :privacy
+    get "/terms", PageController, :terms
+    get "/contact", PageController, :contact
+
     get "/login", SessionController, :new
     post "/login", SessionController, :create
     delete "/logout", SessionController, :delete

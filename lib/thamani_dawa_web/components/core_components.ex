@@ -514,6 +514,203 @@ defmodule ThamaniDawaWeb.CoreComponents do
     """
   end
 
+  @doc """
+  Renders a Thamani design-system pill button.
+
+  Pattern-matched on `variant`:
+  - `"primary"` — Forest-green fill, Snow text (main CTAs, form submits)
+  - `"ghost"` — Transparent fill, Forest-green border (secondary CTAs on light bg)
+  - `"ghost_inv"` — Transparent fill, Snow border (CTAs on dark/Forest bg)
+  - `"lime"` — Lime fill, Forest-green text (accent CTAs)
+
+  Renders as `<.link>` when `navigate` or `href` is set, `<button>` otherwise.
+
+  ## Examples
+
+      <.thamani_btn variant="primary" type="submit">Log in</.thamani_btn>
+      <.thamani_btn variant="ghost" navigate={~p"/signup"}>Get started</.thamani_btn>
+      <.thamani_btn variant="ghost_inv" href="#features">See how it works →</.thamani_btn>
+      <.thamani_btn variant="lime" navigate={~p"/login"}>Log in</.thamani_btn>
+  """
+  attr :variant, :string,
+    values: ~w(primary ghost ghost_inv lime),
+    default: "primary",
+    doc: "button style variant"
+
+  attr :navigate, :string, default: nil, doc: "LiveView navigate href; renders as <.link>"
+  attr :href, :string, default: nil, doc: "regular href; renders as <.link>"
+
+  attr :type, :string,
+    default: "button",
+    doc: "HTML button type attribute (button | submit | reset)"
+
+  attr :class, :any, default: nil, doc: "additional classes appended after variant classes"
+  attr :rest, :global, include: ~w(disabled form id phx-click phx-disable-with)
+
+  slot :inner_block, required: true
+
+  def thamani_btn(%{navigate: nav, href: href} = assigns)
+      when not is_nil(nav) or not is_nil(href) do
+    ~H"""
+    <.link
+      navigate={@navigate}
+      href={@href}
+      class={[thamani_btn_classes(@variant), @class]}
+      {@rest}
+    >
+      {render_slot(@inner_block)}
+    </.link>
+    """
+  end
+
+  def thamani_btn(assigns) do
+    ~H"""
+    <button type={@type} class={[thamani_btn_classes(@variant), @class]} {@rest}>
+      {render_slot(@inner_block)}
+    </button>
+    """
+  end
+
+  # Each clause maps a variant name to its Tailwind token classes.
+  # Colors resolve from the @theme block in app.css — change there, updates everywhere.
+  defp thamani_btn_classes("primary"),
+    do:
+      "inline-flex items-center justify-center px-6 py-[11px] rounded-full bg-thamani-forest text-thamani-snow text-[15px] font-normal no-underline border-0 cursor-pointer transition-transform duration-[160ms] ease-out active:scale-[0.97] hover:opacity-90 w-full"
+
+  defp thamani_btn_classes("ghost"),
+    do:
+      "inline-flex items-center justify-center px-6 py-[11px] rounded-full bg-transparent text-thamani-forest text-[15px] font-normal no-underline border-[1.5px] border-thamani-forest cursor-pointer transition-transform duration-[160ms] ease-out active:scale-[0.97]"
+
+  defp thamani_btn_classes("ghost_inv"),
+    do:
+      "inline-flex items-center justify-center px-6 py-[11px] rounded-full bg-transparent text-thamani-snow text-[15px] font-normal no-underline border-[1.5px] border-thamani-snow cursor-pointer transition-transform duration-[160ms] ease-out active:scale-[0.97]"
+
+  defp thamani_btn_classes("lime"),
+    do:
+      "inline-flex items-center justify-center px-6 py-[11px] rounded-full bg-thamani-lime text-thamani-forest text-[15px] font-medium no-underline border-0 cursor-pointer transition-transform duration-[160ms] ease-out active:scale-[0.97]"
+
+  @doc """
+  Renders a Thamani-styled auth-page form field with label and inline error.
+
+  Pattern-matched on `type`:
+  - `"email"` / `"text"` / `"url"` — standard text input
+  - `"password"` — password input
+
+  Accepts a `Phoenix.HTML.FormField` via `field=` so errors are wired automatically.
+
+  ## Examples
+
+      <.thamani_input field={@form[:email]} type="email" label="Email address"
+        placeholder="you@yourpharmacy.com" autocomplete="email" />
+
+      <.thamani_input field={@form[:password]} type="password" label="Password"
+        placeholder="••••••••" autocomplete="current-password" />
+  """
+  attr :field, Phoenix.HTML.FormField,
+    required: true,
+    doc: "a form field struct, e.g. @form[:email]"
+
+  attr :label, :string, required: true, doc: "visible label text"
+
+  attr :type, :string,
+    default: "text",
+    values: ~w(text email url password textarea),
+    doc: "HTML input type"
+
+  attr :placeholder, :string, default: nil
+  attr :autocomplete, :string, default: nil
+  attr :class, :any, default: nil, doc: "extra classes on the wrapper div"
+  attr :rest, :global, include: ~w(required disabled readonly rows)
+
+  def thamani_input(%{type: "textarea", field: field} = assigns) do
+    errors = if Phoenix.Component.used_input?(field), do: field.errors, else: []
+
+    assigns =
+      assigns
+      |> assign(:errors, Enum.map(errors, &translate_error(&1)))
+      |> assign(:input_id, field.id)
+      |> assign(:name, field.name)
+      |> assign(:value, field.value)
+
+    ~H"""
+    <div class={["mb-5", @class]}>
+      <div class={[
+        "flex items-baseline justify-between mb-2",
+        @errors != [] && "mb-1"
+      ]}>
+        <label
+          for={@input_id}
+          class="block text-[13px] font-medium text-thamani-forest tracking-[0.01em]"
+        >
+          {@label}
+        </label>
+      </div>
+      <textarea
+        id={@input_id}
+        name={@name}
+        placeholder={@placeholder}
+        class={[
+          "w-full box-border px-4 py-3 text-[15px] text-thamani-forest bg-thamani-snow",
+          "border-[1.5px] rounded-lg outline-none",
+          "transition-[border-color,box-shadow] duration-150 ease-in-out",
+          "focus:border-thamani-forest focus:shadow-[0_0_0_3px_rgba(28,58,19,0.08)]",
+          (@errors != [] && "border-thamani-error") || "border-thamani-stone"
+        ]}
+        {@rest}
+      >{Phoenix.HTML.Form.normalize_value("textarea", @value)}</textarea>
+      <p :for={msg <- @errors} class="text-[13px] text-thamani-error mt-1.5">
+        {msg}
+      </p>
+    </div>
+    """
+  end
+
+  def thamani_input(%{field: field} = assigns) do
+    errors = if Phoenix.Component.used_input?(field), do: field.errors, else: []
+
+    assigns =
+      assigns
+      |> assign(:errors, Enum.map(errors, &translate_error(&1)))
+      |> assign(:input_id, field.id)
+      |> assign(:name, field.name)
+      |> assign(:value, field.value)
+
+    ~H"""
+    <div class={["mb-5", @class]}>
+      <div class={[
+        "flex items-baseline justify-between mb-2",
+        @errors != [] && "mb-1"
+      ]}>
+        <label
+          for={@input_id}
+          class="block text-[13px] font-medium text-thamani-forest tracking-[0.01em]"
+        >
+          {@label}
+        </label>
+      </div>
+      <input
+        id={@input_id}
+        type={@type}
+        name={@name}
+        value={Phoenix.HTML.Form.normalize_value(@type, @value)}
+        placeholder={@placeholder}
+        autocomplete={@autocomplete}
+        class={[
+          "w-full box-border px-4 py-3 text-[15px] text-thamani-forest bg-thamani-snow",
+          "border-[1.5px] rounded-lg outline-none",
+          "transition-[border-color,box-shadow] duration-150 ease-in-out",
+          "focus:border-thamani-forest focus:shadow-[0_0_0_3px_rgba(28,58,19,0.08)]",
+          (@errors != [] && "border-thamani-error") || "border-thamani-stone"
+        ]}
+        {@rest}
+      />
+      <p :for={msg <- @errors} class="text-[13px] text-thamani-error mt-1.5">
+        {msg}
+      </p>
+    </div>
+    """
+  end
+
   ## JS Commands
 
   def show(js \\ %JS{}, selector) do

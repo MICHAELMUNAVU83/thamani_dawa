@@ -106,3 +106,455 @@
 [data-phx-session], [data-phx-teleported-src] { display: contents }
 
 /* This file is for your main application CSS */
+
+/* ============================================================
+   Thamani Design System — Tokens
+   ============================================================ */
+
+:root {
+  /* Thamani palette — single source of truth */
+  --thamani-forest:  #1c3a13;
+  --thamani-lime:    #d3fa99;
+  --thamani-snow:    #fcfcf7;
+  --thamani-stone:   #eeeee9;
+  --thamani-pewter:  #666666;
+  --thamani-frosted: #c4c7c4;
+  --thamani-subtle:  #b3b3b3;
+  --thamani-error:   #b91c1c;
+
+  /* Landing page tokens — always light (Thamani palette) */
+  --brand:          #1c3a13;
+  --ld-bg:          #fcfcf7;
+  --ld-surface:     #eeeee9;
+  --ld-text:        #1c3a13;
+  --ld-text-muted:  #666666;
+  --ld-text-subtle: #b3b3b3;
+  --ld-border:      rgba(28, 58, 19, 0.1);
+  --ld-marquee-dur: 28s;
+}
+
+/* ============================================================
+   Thamani Tailwind Theme — makes bg-thamani-forest, text-thamani-snow,
+   border-thamani-lime etc. available as first-class Tailwind utilities.
+   Change a value here → every component using that token updates.
+   ============================================================ */
+
+@theme {
+  --color-thamani-forest:  #1c3a13;
+  --color-thamani-lime:    #d3fa99;
+  --color-thamani-snow:    #fcfcf7;
+  --color-thamani-stone:   #eeeee9;
+  --color-thamani-pewter:  #666666;
+  --color-thamani-frosted: #c4c7c4;
+  --color-thamani-subtle:  #b3b3b3;
+  --color-thamani-error:   #b91c1c;
+}
+
+
+/* ============================================================
+   Landing Page — Keyframes
+   ============================================================ */
+
+@keyframes hero-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes marquee-left {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+@keyframes marquee-right {
+  from { transform: translateX(-50%); }
+  to   { transform: translateX(0); }
+}
+
+@keyframes thamani-fade-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ============================================================
+   Landing Page — Scroll Reveal
+   ============================================================ */
+
+.reveal-item {
+  opacity: 0;
+  transform: translateY(32px) scale(0.97);
+  transition:
+    opacity   520ms cubic-bezier(0.23, 1, 0.32, 1),
+    transform 520ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.reveal-item.revealed {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.reveal-item:nth-child(1) { transition-delay:   0ms; }
+.reveal-item:nth-child(2) { transition-delay: 120ms; }
+.reveal-item:nth-child(3) { transition-delay: 240ms; }
+
+/* ============================================================
+   Landing Page — Section Backgrounds
+   ============================================================ */
+
+.ld-dark-section {
+  background: var(--thamani-forest);
+  color: var(--thamani-snow);
+
+  /* Flip all var(--ld-*) children for the dark context */
+  --brand:          var(--thamani-lime);
+  --ld-bg:          var(--thamani-forest);
+  --ld-text:        var(--thamani-snow);
+  --ld-text-muted:  rgba(252, 252, 247, 0.65);
+  --ld-text-subtle: rgba(252, 252, 247, 0.4);
+  --ld-surface:     rgba(252, 252, 247, 0.06);
+  --ld-border:      rgba(252, 252, 247, 0.12);
+}
+
+/* Active scan pill text on lime bg in dark section */
+.ld-dark-section .ld-scan-pill.ld-active {
+  color: var(--thamani-forest);
+}
+
+/* Answer bubble flips to lime on dark bg */
+.ld-dark-section .ld-answer-bubble {
+  background: var(--thamani-lime);
+  color: var(--thamani-forest);
+}
+
+/* Progress fill to lime in dark section */
+.ld-dark-section .ld-progress-fill {
+  background: var(--thamani-lime);
+}
+
+.ld-stone-section {
+  background: var(--thamani-stone);
+}
+
+/* ============================================================
+   Landing Page — Feature Cards (no shadows — Thamani principle)
+   ============================================================ */
+
+.ld-feature-card {
+  transition: transform 200ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .ld-feature-card:hover {
+    transform: translateY(-2px) scale(1.015);
+  }
+}
+
+.ld-feature-card:active {
+  transform: scale(0.97);
+}
+
+/* ============================================================
+   Landing Page — Thamani Buttons
+   ============================================================ */
+
+.thamani-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 24px;
+  border-radius: 1000px;
+  background: var(--thamani-forest);
+  color: var(--thamani-snow);
+  font-size: 14px;
+  font-weight: 400;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  transition: transform 160ms ease-out;
+}
+
+.thamani-btn-primary:active { transform: scale(0.97); }
+
+.thamani-btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 24px;
+  border-radius: 1000px;
+  background: transparent;
+  color: var(--thamani-forest);
+  font-size: 14px;
+  font-weight: 400;
+  text-decoration: none;
+  border: 1.5px solid var(--thamani-forest);
+  cursor: pointer;
+  transition: transform 160ms ease-out;
+}
+
+.thamani-btn-ghost:active { transform: scale(0.97); }
+
+.thamani-btn-ghost-inv {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 24px;
+  border-radius: 1000px;
+  background: transparent;
+  color: var(--thamani-snow);
+  font-size: 14px;
+  font-weight: 400;
+  text-decoration: none;
+  border: 1.5px solid var(--thamani-snow);
+  cursor: pointer;
+  transition: transform 160ms ease-out;
+}
+
+.thamani-btn-ghost-inv:active { transform: scale(0.97); }
+
+.thamani-btn-lime {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 24px;
+  border-radius: 1000px;
+  background: var(--thamani-lime);
+  color: var(--thamani-forest);
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  transition: transform 160ms ease-out;
+}
+
+.thamani-btn-lime:active { transform: scale(0.97); }
+
+/* ============================================================
+   Landing Page — Thamani Badge
+   ============================================================ */
+
+.thamani-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 1000px;
+  background: var(--thamani-lime);
+  color: var(--thamani-forest);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+/* ============================================================
+   Landing Page — Nav Links
+   ============================================================ */
+
+.ld-nav-link {
+  font-size: 14px;
+  color: var(--thamani-pewter);
+  text-decoration: none;
+  transition: color 150ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .ld-nav-link:hover { color: var(--thamani-forest); }
+}
+
+/* ============================================================
+   Landing Page — Value Prop Items
+   ============================================================ */
+
+.ld-value-prop {
+  padding: 20px 0;
+  border-top: 1px solid var(--thamani-stone);
+}
+
+.ld-value-prop:last-child {
+  border-bottom: 1px solid var(--thamani-stone);
+}
+
+/* ============================================================
+   Landing Page — Buttons (legacy)
+   ============================================================ */
+
+.ld-btn {
+  transition:
+    transform        120ms ease-out,
+    background-color 150ms ease,
+    color            150ms ease,
+    border-color     150ms ease;
+}
+
+.ld-btn:active {
+  transform: scale(0.97);
+}
+
+/* ============================================================
+   Landing Page — Marquee
+   ============================================================ */
+
+.ld-marquee-wrapper {
+  overflow: hidden;
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    black 8%,
+    black 92%,
+    transparent
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent,
+    black 8%,
+    black 92%,
+    transparent
+  );
+}
+
+.ld-marquee-track {
+  display: flex;
+  width: max-content;
+  gap: 12px;
+  padding: 4px 0;
+}
+
+.ld-marquee-left  .ld-marquee-track { animation: marquee-left  var(--ld-marquee-dur) linear infinite; }
+.ld-marquee-right .ld-marquee-track { animation: marquee-right var(--ld-marquee-dur) linear infinite; }
+
+/* ============================================================
+   Landing Page — Stats divider (desktop only)
+   ============================================================ */
+
+@media (min-width: 640px) {
+  .ld-stat-sep {
+    border-left: 1px solid var(--ld-border);
+  }
+}
+
+/* ============================================================
+   Landing Page — Card Demo Areas
+   ============================================================ */
+
+/* --- Card 1: scan pill cycle --- */
+.ld-scan-pill {
+  display: inline-block;
+  padding: 8px 18px;
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 400;
+  text-align: center;
+  min-width: 168px;
+  border: 1px solid var(--ld-border);
+  background: var(--ld-bg);
+  color: var(--ld-text-muted);
+  opacity: 0.55;
+  transform: scale(0.95);
+  transition:
+    opacity      400ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform    400ms cubic-bezier(0.16, 1, 0.3, 1),
+    background   400ms ease,
+    color        400ms ease,
+    border-color 400ms ease;
+  will-change: transform, opacity;
+}
+
+.ld-scan-pill.ld-active {
+  opacity: 1;
+  transform: scale(1.04);
+  background: var(--brand);
+  color: #fff;
+  border-color: var(--brand);
+}
+
+/* --- Card 2: query / answer bubbles --- */
+.ld-query-bubble,
+.ld-answer-bubble {
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.5;
+  transition:
+    opacity   380ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 380ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ld-query-bubble {
+  background: var(--ld-surface);
+  color: var(--ld-text-muted);
+  border: 1px solid var(--ld-border);
+}
+
+.ld-answer-bubble {
+  background: #1c3a13;
+  color: #fcfcf7;
+  align-self: flex-start;
+  max-width: 85%;
+}
+
+/* --- Card 3: progress bar --- */
+.ld-progress-track {
+  width: 128px;
+  height: 4px;
+  background: var(--ld-surface);
+  border-radius: 9999px;
+  overflow: hidden;
+  border: 1px solid var(--ld-border);
+}
+
+.ld-progress-fill {
+  height: 100%;
+  background: var(--brand);
+  border-radius: 9999px;
+  width: 0%;
+  transition: width 70ms linear;
+}
+
+@keyframes ld-pulse-opacity {
+  0%, 100% { opacity: 0.6; }
+  50%       { opacity: 1;   }
+}
+
+.ld-sync-label {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--ld-text);
+  letter-spacing: 0.01em;
+  animation: ld-pulse-opacity 2s ease-in-out infinite;
+}
+
+.ld-sync-sublabel {
+  font-size: 12px;
+  color: var(--ld-text-muted);
+}
+
+/* ============================================================
+   Landing Page — Reduced Motion
+   ============================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal-item {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .ld-feature-card,
+  .ld-btn,
+  .thamani-btn-primary,
+  .thamani-btn-ghost,
+  .thamani-btn-ghost-inv,
+  .thamani-btn-lime {
+    transition: none;
+  }
+
+  .ld-marquee-track {
+    animation: none;
+  }
+
+  [style*="hero-in"] {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}

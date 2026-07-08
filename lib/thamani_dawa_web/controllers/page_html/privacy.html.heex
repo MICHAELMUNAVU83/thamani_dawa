@@ -1,0 +1,443 @@
+<%!-- ============================================================
+     PRIVACY POLICY — Thamani Dawa
+     Layout: <.legal_hero> / prose body with <.legal_section> / <.page_footer>
+     ============================================================ --%>
+
+<.legal_hero
+  title="Privacy Notice"
+  subtitle="This notice describes how Thamani Dawa collects, uses, and protects your personal information when you use our pharmacy management platform."
+  date_label="Last updated: April 17, 2026"
+/>
+
+<%!-- Prose body --%>
+<section style="background: var(--thamani-snow); padding: 72px 24px 96px;">
+  <div class="max-w-3xl mx-auto">
+    <%!-- Summary callout (unique to privacy) --%>
+    <div style="background: var(--thamani-stone); border-radius: 16px; padding: 32px 36px; margin-bottom: 56px;">
+      <p style="font-size: 11px; font-weight: 500; color: var(--thamani-subtle); letter-spacing: 0.09em; text-transform: uppercase; margin-bottom: 16px;">
+        Summary of Key Points
+      </p>
+      <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px;">
+        <li style="font-size: 15px; line-height: 1.6; color: var(--thamani-forest); display: flex; gap: 10px;">
+          <span style="color: var(--thamani-forest); font-weight: 500; flex-shrink: 0;">→</span>
+          <span><strong>What we collect.</strong>
+          Account credentials, pharmacy/lab operational data you enter, usage logs, and device information.</span>
+        </li>
+        <li style="font-size: 15px; line-height: 1.6; color: var(--thamani-forest); display: flex; gap: 10px;">
+          <span style="color: var(--thamani-forest); font-weight: 500; flex-shrink: 0;">→</span>
+          <span><strong>Sensitive data.</strong>
+          We do not process sensitive personal information such as health records beyond what you as a licensed operator explicitly enter for dispensing and lab purposes.</span>
+        </li>
+        <li style="font-size: 15px; line-height: 1.6; color: var(--thamani-forest); display: flex; gap: 10px;">
+          <span style="color: var(--thamani-forest); font-weight: 500; flex-shrink: 0;">→</span>
+          <span><strong>Third parties.</strong>
+          We do not sell your data. We share only with sub-processors required to operate the service (hosting, email, analytics).</span>
+        </li>
+        <li style="font-size: 15px; line-height: 1.6; color: var(--thamani-forest); display: flex; gap: 10px;">
+          <span style="color: var(--thamani-forest); font-weight: 500; flex-shrink: 0;">→</span>
+          <span><strong>Your rights.</strong>
+          Depending on your location you may access, correct, or delete your data. Submit a request at <a
+            href="mailto:privacy@example.com"
+            style="color: var(--thamani-forest); text-decoration: underline;"
+          >privacy@example.com</a>.</span>
+        </li>
+      </ul>
+    </div>
+
+    <%!-- Table of contents --%>
+    <.legal_toc entries={[
+      {"what-we-collect", "What information do we collect?"},
+      {"how-we-process", "How do we process your information?"},
+      {"legal-bases", "What legal bases do we rely on?"},
+      {"sharing", "When and with whom do we share your information?"},
+      {"cookies", "Do we use cookies and other tracking technologies?"},
+      {"data-retention", "How long do we keep your information?"},
+      {"data-safety", "How do we keep your information safe?"},
+      {"minors", "Do we collect information from minors?"},
+      {"your-rights", "What are your privacy rights?"},
+      {"do-not-track", "Controls for Do-Not-Track features"},
+      {"kenya-rights", "Do Kenya residents have specific rights?"},
+      {"updates", "Do we make updates to this notice?"},
+      {"contact", "How can you contact us about this notice?"}
+    ]} />
+
+    <hr style="border: none; border-top: 1px solid var(--thamani-stone); margin-bottom: 56px;" />
+
+    <%!-- Section 1 --%>
+    <.legal_section id="what-we-collect" number={1} title="What Information Do We Collect?">
+      <p style="font-size: 16px; line-height: 1.75; color: var(--thamani-forest); margin-bottom: 16px;">
+        <strong>In Short:</strong>
+        We collect information you provide directly, information generated automatically when you use the platform, and certain device/network metadata.
+      </p>
+      <h3 style="font-size: 17px; font-weight: 500; color: var(--thamani-forest); margin: 24px 0 10px;">
+        Information you provide to us
+      </h3>
+      <p style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter); margin-bottom: 16px;">
+        We collect personal information that you voluntarily provide to us when you register for an account, use features of Thamani Dawa, or contact us for support. This includes:
+      </p>
+      <ul style="padding-left: 20px; display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px;">
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          <strong style="color: var(--thamani-forest);">Account &amp; identity:</strong>
+          Full name, email address, job title, and role (admin, pharmacist, lab technician) within your organisation.
+        </li>
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          <strong style="color: var(--thamani-forest);">Authentication data:</strong>
+          Hashed passwords and 4-digit PIN credentials used for PIN-gated dispensing and verification actions.
+        </li>
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          <strong style="color: var(--thamani-forest);">Operational data:</strong>
+          Patient visit records, prescription items, lab orders, batch numbers, GS1 barcodes, dispense logs, stock levels, and other pharmacy/lab data you enter as part of your normal workflow. This data belongs to your organisation and is processed on your behalf as a data processor.
+        </li>
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          <strong style="color: var(--thamani-forest);">Communications:</strong>
+          Messages you send to our support team or via email.
+        </li>
+      </ul>
+      <h3 style="font-size: 17px; font-weight: 500; color: var(--thamani-forest); margin: 24px 0 10px;">
+        Information collected automatically
+      </h3>
+      <p style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter); margin-bottom: 16px;">
+        When you access the platform, we automatically collect certain technical information:
+      </p>
+      <ul style="padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          <strong style="color: var(--thamani-forest);">Log data:</strong>
+          IP address, browser type, operating system, referring URLs, pages visited, and timestamps.
+        </li>
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          <strong style="color: var(--thamani-forest);">Device data:</strong>
+          Device identifiers, screen resolution, and language preferences.
+        </li>
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          <strong style="color: var(--thamani-forest);">Performance &amp; error telemetry:</strong>
+          Aggregated crash reports and performance metrics to help us improve stability.
+        </li>
+      </ul>
+    </.legal_section>
+
+    <%!-- Section 2 --%>
+    <.legal_section id="how-we-process" number={2} title="How Do We Process Your Information?">
+      <p style="font-size: 16px; line-height: 1.75; color: var(--thamani-forest); margin-bottom: 16px;">
+        <strong>In Short:</strong>
+        We process your information to provide, improve, and secure the Thamani Dawa pharmacy management platform.
+      </p>
+      <p style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter); margin-bottom: 12px;">
+        Specifically, we process your data to:
+      </p>
+      <ul style="padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          Create and manage your account and your organisation's workspace.
+        </li>
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          Deliver the core features of the platform: GS1 barcode scanning, dispensing workflows, lab order management, prescription tracking, and multi-site stock visibility.
+        </li>
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          Generate audit trails required by the Kenya Pharmacy and Poisons Board for controlled substances.
+        </li>
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          Send transactional emails (account setup, invite links, password resets).
+        </li>
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          Detect, investigate, and prevent fraud, abuse, and security incidents.
+        </li>
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          Comply with applicable law including the Kenya Data Protection Act 2019.
+        </li>
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          Improve the platform using anonymised, aggregated usage analytics.
+        </li>
+      </ul>
+    </.legal_section>
+
+    <%!-- Section 3 --%>
+    <.legal_section id="legal-bases" number={3} title="What Legal Bases Do We Rely On?">
+      <p style="font-size: 16px; line-height: 1.75; color: var(--thamani-forest); margin-bottom: 16px;">
+        <strong>In Short:</strong>
+        We only process your personal information when we have a valid legal basis under applicable data protection law.
+      </p>
+      <p style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter); margin-bottom: 20px;">
+        Our primary legal bases under the <strong>Kenya Data Protection Act 2019</strong>
+        and, where applicable, the EU/UK GDPR are:
+      </p>
+      <ul style="padding-left: 20px; display: flex; flex-direction: column; gap: 12px;">
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          <strong style="color: var(--thamani-forest);">Contract performance.</strong>
+          Processing necessary to create your account, provide the platform services, and fulfil our obligations under the subscription agreement with your organisation.
+        </li>
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          <strong style="color: var(--thamani-forest);">Legitimate interests.</strong>
+          Fraud prevention, security monitoring, platform improvement (using anonymised data), and internal analytics — balanced against your rights and not overridden by them.
+        </li>
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          <strong style="color: var(--thamani-forest);">Legal obligation.</strong>
+          Compliance with the Kenya Pharmacy and Poisons Board regulations, the Kenya Data Protection Act 2019, and any court orders or government requests.
+        </li>
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          <strong style="color: var(--thamani-forest);">Consent.</strong>
+          For optional communications (e.g., marketing emails) — you may withdraw consent at any time by emailing <a
+            href="mailto:privacy@example.com"
+            style="color: var(--thamani-forest);"
+          >privacy@example.com</a>.
+        </li>
+      </ul>
+    </.legal_section>
+
+    <%!-- Section 4 --%>
+    <.legal_section
+      id="sharing"
+      number={4}
+      title="When and With Whom Do We Share Your Information?"
+    >
+      <p style="font-size: 16px; line-height: 1.75; color: var(--thamani-forest); margin-bottom: 16px;">
+        <strong>In Short:</strong>
+        We do not sell your data. We share it only with trusted sub-processors and when legally required.
+      </p>
+      <ul style="padding-left: 20px; display: flex; flex-direction: column; gap: 12px;">
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          <strong style="color: var(--thamani-forest);">Cloud infrastructure.</strong>
+          Our hosting provider stores data on servers located in the European Union or Africa (where available). All sub-processors are bound by data processing agreements.
+        </li>
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          <strong style="color: var(--thamani-forest);">Email delivery.</strong>
+          Transactional emails are sent through a third-party email service provider. Only your email address and the content of the specific email are shared for this purpose.
+        </li>
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          <strong style="color: var(--thamani-forest);">Error monitoring.</strong>
+          Anonymised crash reports may be processed by an error-tracking service to help us diagnose and fix bugs.
+        </li>
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          <strong style="color: var(--thamani-forest);">Legal requirements.</strong>
+          We may disclose information where required by law, court order, or to protect the rights and safety of Thamani Dawa, our users, or the public.
+        </li>
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          <strong style="color: var(--thamani-forest);">Business transfers.</strong>
+          In the event of a merger, acquisition, or sale of assets, your information may be transferred to the acquiring entity, subject to the same privacy protections.
+        </li>
+      </ul>
+    </.legal_section>
+
+    <%!-- Section 5 --%>
+    <.legal_section
+      id="cookies"
+      number={5}
+      title="Do We Use Cookies and Other Tracking Technologies?"
+    >
+      <p style="font-size: 16px; line-height: 1.75; color: var(--thamani-forest); margin-bottom: 16px;">
+        <strong>In Short:</strong>
+        We use session cookies for authentication and security. We do not use advertising or cross-site tracking cookies.
+      </p>
+      <p style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter); margin-bottom: 12px;">
+        Thamani Dawa places a single, HTTP-only session cookie on your browser when you log in. This cookie:
+      </p>
+      <ul style="padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          Maintains your authenticated session and multi-site context.
+        </li>
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          Is flagged
+          <code
+            style="font-family: monospace; font-size: 14px; background: var(--thamani-stone); padding: 1px 6px; border-radius: 4px;"
+            phx-no-curly-interpolation
+          >Secure</code>
+          and
+          <code
+            style="font-family: monospace; font-size: 14px; background: var(--thamani-stone); padding: 1px 6px; border-radius: 4px;"
+            phx-no-curly-interpolation
+          >HttpOnly</code>
+          and cannot be read by JavaScript.
+        </li>
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          Expires when you log out or after a period of inactivity.
+        </li>
+      </ul>
+      <p style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter); margin-top: 16px;">
+        We do not use third-party advertising cookies, fingerprinting technologies, or pixel trackers. You can disable cookies in your browser settings, but this will prevent you from logging in.
+      </p>
+    </.legal_section>
+
+    <%!-- Section 6 --%>
+    <.legal_section id="data-retention" number={6} title="How Long Do We Keep Your Information?">
+      <p style="font-size: 16px; line-height: 1.75; color: var(--thamani-forest); margin-bottom: 16px;">
+        <strong>In Short:</strong>
+        We keep your information for as long as necessary to provide the service and comply with legal obligations.
+      </p>
+      <p style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter); margin-bottom: 12px;">
+        Specifically:
+      </p>
+      <ul style="padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          <strong style="color: var(--thamani-forest);">Account data</strong>
+          is retained for the duration of your organisation's subscription and for up to 90 days after account deletion (to allow for recovery).
+        </li>
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          <strong style="color: var(--thamani-forest);">Pharmacy operational records</strong>
+          (prescriptions, dispense logs, controlled drug registers) are retained for a minimum of 5 years in line with Kenya Pharmacy and Poisons Board requirements.
+        </li>
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          <strong style="color: var(--thamani-forest);">Lab order data</strong>
+          is retained for a minimum of 3 years from the date of the test.
+        </li>
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          <strong style="color: var(--thamani-forest);">Log data</strong>
+          is retained for 12 months for security and debugging purposes.
+        </li>
+      </ul>
+    </.legal_section>
+
+    <%!-- Section 7 --%>
+    <.legal_section id="data-safety" number={7} title="How Do We Keep Your Information Safe?">
+      <p style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter); margin-bottom: 12px;">
+        We implement the following technical and organisational safeguards:
+      </p>
+      <ul style="padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          All data in transit is encrypted using TLS 1.2 or higher.
+        </li>
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          Passwords are hashed using bcrypt; PINs are stored hashed and never transmitted in plaintext.
+        </li>
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          Access to sensitive dispensing and verification actions is protected by a secondary 4-digit PIN gate.
+        </li>
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          Role-based access control (admin, pharmacist, lab technician) limits what each user can see and do.
+        </li>
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          Regular automated backups with point-in-time recovery.
+        </li>
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          CSRF protection and HTTP security headers on all requests.
+        </li>
+      </ul>
+      <p style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter); margin-top: 16px;">
+        No system is 100% secure. If you believe your account has been compromised, contact us immediately at <a
+          href="mailto:privacy@example.com"
+          style="color: var(--thamani-forest);"
+        >privacy@example.com</a>.
+      </p>
+    </.legal_section>
+
+    <%!-- Section 8 --%>
+    <.legal_section id="minors" number={8} title="Do We Collect Information from Minors?">
+      <p style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+        Thamani Dawa is a B2B healthcare platform for licensed pharmacy and laboratory operators. We do not knowingly collect personal data from individuals under the age of 18 for <em>account registration</em>. Patient data entered into the system by licensed operators may relate to minors and is subject to applicable healthcare privacy law and your organisation's own data protection policies. If you believe we have inadvertently collected personal data from a minor in error, contact us at <a
+          href="mailto:privacy@example.com"
+          style="color: var(--thamani-forest);"
+        >privacy@example.com</a>.
+      </p>
+    </.legal_section>
+
+    <%!-- Section 9 --%>
+    <.legal_section id="your-rights" number={9} title="What Are Your Privacy Rights?">
+      <p style="font-size: 16px; line-height: 1.75; color: var(--thamani-forest); margin-bottom: 16px;">
+        <strong>In Short:</strong>
+        Depending on your location, you have rights over your personal data including access, correction, deletion, and portability.
+      </p>
+      <p style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter); margin-bottom: 12px;">
+        Under the Kenya Data Protection Act 2019 and GDPR (where applicable), you may:
+      </p>
+      <ul style="padding-left: 20px; display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px;">
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          <strong style="color: var(--thamani-forest);">Access</strong>
+          the personal information we hold about you.
+        </li>
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          <strong style="color: var(--thamani-forest);">Correct</strong>
+          inaccurate or incomplete information.
+        </li>
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          <strong style="color: var(--thamani-forest);">Delete</strong>
+          your account and associated personal data, subject to legal retention requirements.
+        </li>
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          <strong style="color: var(--thamani-forest);">Port</strong>
+          your data in a structured, machine-readable format.
+        </li>
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          <strong style="color: var(--thamani-forest);">Object</strong>
+          to processing based on legitimate interests.
+        </li>
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          <strong style="color: var(--thamani-forest);">Withdraw consent</strong>
+          for any consent-based processing at any time.
+        </li>
+      </ul>
+      <p style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+        To exercise any of these rights, email <a
+          href="mailto:privacy@thamanidawa.com"
+          style="color: var(--thamani-forest);"
+        >privacy@thamanidawa.com</a>. We will respond within 30 days. Note that some requests may be limited where retention is required by law (e.g. pharmacy audit records).
+      </p>
+    </.legal_section>
+
+    <%!-- Section 10 --%>
+    <.legal_section id="do-not-track" number={10} title="Controls for Do-Not-Track Features">
+      <p style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+        Some browsers and mobile operating systems include a Do-Not-Track ("DNT") feature that signals your preference not to be tracked across websites. Because there is no agreed-upon standard for how to interpret DNT signals, Thamani Dawa does not currently respond to DNT browser signals. However, because we do not conduct cross-site behavioural tracking or advertising, DNT settings do not materially affect how we process your data.
+      </p>
+    </.legal_section>
+
+    <%!-- Section 11 --%>
+    <.legal_section
+      id="kenya-rights"
+      number={11}
+      title="Do Kenya Residents Have Specific Privacy Rights?"
+    >
+      <p style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter); margin-bottom: 12px;">
+        Yes. Kenya residents have the rights listed in Section 9 above, derived from the
+        <strong>Kenya Data Protection Act 2019 (DPA)</strong>
+        and enforced by the Office of the Data Protection Commissioner (ODPC). In addition:
+      </p>
+      <ul style="padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          You have the right to lodge a complaint with the ODPC at
+          <a
+            href="https://www.odpc.go.ke"
+            target="_blank"
+            rel="noopener"
+            style="color: var(--thamani-forest);"
+          >odpc.go.ke</a>
+          if you believe your data rights have been violated.
+        </li>
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          We have appointed an internal Data Protection Officer. You may contact them at <a
+            href="mailto:privacy@thamanidawa.com"
+            style="color: var(--thamani-forest);"
+          >privacy@thamanidawa.com</a>.
+        </li>
+        <li style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+          Cross-border transfers of data outside Kenya are conducted only to countries with adequate data protection frameworks or under Standard Contractual Clauses.
+        </li>
+      </ul>
+    </.legal_section>
+
+    <%!-- Section 12 --%>
+    <.legal_section id="updates" number={12} title="Do We Make Updates to This Notice?">
+      <p style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter);">
+        We may update this Privacy Notice from time to time to reflect changes in law, our practices, or the features of the platform. The updated version will be indicated by a revised "Last updated" date at the top of this page. If we make material changes, we will notify you by email or through a prominent notice within the platform. Your continued use of Thamani Dawa after any changes constitutes your acceptance of the revised notice.
+      </p>
+    </.legal_section>
+
+    <%!-- Section 13 --%>
+    <.legal_section id="contact" number={13} title="How Can You Contact Us About This Notice?">
+      <p style="font-size: 16px; line-height: 1.75; color: var(--thamani-pewter); margin-bottom: 24px;">
+        If you have questions, concerns, or requests regarding this Privacy Notice or your personal data, please reach out to us:
+      </p>
+      <div style="background: var(--thamani-stone); border-radius: 16px; padding: 28px 32px; display: inline-block;">
+        <p style="font-size: 15px; font-weight: 500; color: var(--thamani-forest); margin-bottom: 8px;">
+          Thamani Dawa
+        </p>
+        <p style="font-size: 15px; color: var(--thamani-pewter); line-height: 1.7;">
+          Nairobi, Kenya<br /> Phone:
+          <a href="tel:+254799999999" style="color: var(--thamani-forest);">+254 799 999 999</a><br />
+          Email:
+          <a href="mailto:privacy@example.com" style="color: var(--thamani-forest);">privacy@example.com</a>
+        </p>
+      </div>
+    </.legal_section>
+
+    <.legal_page_nav />
+  </div>
+</section>
+
+<.page_footer active_link={:privacy} />
