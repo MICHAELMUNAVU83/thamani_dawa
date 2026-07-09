@@ -94,7 +94,7 @@ defmodule ThamaniDawaWeb.PharmacyDashboardLive do
       <.table
         id="pending-prescriptions"
         rows={@pending_prescriptions}
-        row_click={&JS.navigate(~p"/pharmacy/prescriptions/#{&1.id}")}
+        row_click={fn prescription -> JS.navigate(~p"/pharmacy/prescriptions/#{prescription.id}") end}
       >
         <:col :let={prescription} label="Status">{Phoenix.Naming.humanize(prescription.status)}</:col>
         <:col :let={prescription} label="Total">{prescription.total_amount}</:col>

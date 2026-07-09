@@ -107,7 +107,7 @@ defmodule ThamaniDawaWeb.ProductLive.Index do
 
   def render(assigns) do
     ~H"""
-    <Layouts.app_shell flash={@flash} current_scope={@current_scope}>
+    <Layouts.org_shell flash={@flash} current_scope={@current_scope} current_path={~p"/org/products"}>
       <.header>
         Product catalog
         <:actions>
@@ -164,7 +164,7 @@ defmodule ThamaniDawaWeb.ProductLive.Index do
           <.link patch={~p"/org/products/#{product.id}/edit"} class="link">Edit</.link>
         </:action>
       </.table>
-    </Layouts.app_shell>
+    </Layouts.org_shell>
     """
   end
 end

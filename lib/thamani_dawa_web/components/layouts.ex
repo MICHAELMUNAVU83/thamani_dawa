@@ -93,21 +93,83 @@ defmodule ThamaniDawaWeb.Layouts do
 
   def lab_shell(assigns) do
     ~H"""
+    <.sidebar_shell
+      flash={@flash}
+      current_scope={@current_scope}
+      current_path={@current_path}
+      title="Thamani Dawa"
+      section_label="Lab"
+      base_path="/lab"
+      nav_items={[
+        {"Dashboard", "hero-squares-2x2", ~p"/lab"},
+        {"Orders", "hero-clipboard-document-list", ~p"/lab/orders"},
+        {"Verification queue", "hero-check-badge", ~p"/lab/verification-queue"},
+        {"Receive stock", "hero-arrow-down-tray", ~p"/lab/receive-stock"},
+        {"Scan", "hero-qr-code", ~p"/lab/scan"}
+      ]}
+    >
+      {render_slot(@inner_block)}
+    </.sidebar_shell>
+    """
+  end
+
+  @doc """
+  Renders the authenticated org shell: a sticky top bar plus a
+  collapsible sidebar with quick-links to every org section.
+  """
+  attr :flash, :map, required: true
+  attr :current_scope, :map, required: true
+  attr :current_path, :string, default: ""
+
+  slot :inner_block, required: true
+
+  def org_shell(assigns) do
+    ~H"""
+    <.sidebar_shell
+      flash={@flash}
+      current_scope={@current_scope}
+      current_path={@current_path}
+      title="Thamani Dawa (Admin)"
+      section_label="Organization"
+      base_path="/org"
+      nav_items={[
+        {"Team", "hero-user-group", ~p"/org/team"},
+        {"Sites", "hero-building-office-2", ~p"/org/sites"},
+        {"Products", "hero-cube", ~p"/org/products"}
+      ]}
+    >
+      {render_slot(@inner_block)}
+    </.sidebar_shell>
+    """
+  end
+
+  attr :flash, :map, required: true
+  attr :current_scope, :map, required: true
+  attr :current_path, :string, required: true
+  attr :title, :string, required: true
+  attr :section_label, :string, required: true
+  attr :base_path, :string, required: true
+  attr :nav_items, :list, required: true
+
+  slot :inner_block, required: true
+
+  defp sidebar_shell(assigns) do
+    ~H"""
     <div
-      id="lab-shell"
+      id="sidebar-shell"
       class="min-h-screen"
       style="background: #fcfcf7; font-family: var(--font-thamani-sans, sans-serif);"
-      phx-hook=".LabSidebar"
+      phx-hook=".Sidebar"
     >
       <%!-- Top navigation bar --%>
       <header
-        id="lab-topbar"
+        id="sidebar-topbar"
         class="sticky top-0 z-30 flex items-center gap-3 px-4"
         style="background: #1c3a13; height: 56px;"
       >
         <%!-- Sidebar toggle --%>
         <button
-          id="lab-sidebar-toggle"
+          id="sidebar-toggle"
           type="button"
           aria-label="Toggle sidebar"
           class="flex items-center justify-center rounded-lg p-1.5 transition-colors cursor-pointer"
@@ -121,7 +183,7 @@ defmodule ThamaniDawaWeb.Layouts do
           class="font-semibold text-sm tracking-wide"
           style="color: #fcfcf7;"
         >
-          Thamani Dawa
+          {@title}
         </a>
 
         <div class="flex-1" />
@@ -160,30 +222,24 @@ defmodule ThamaniDawaWeb.Layouts do
       <div class="flex" style="min-height: calc(100vh - 56px);">
         <%!-- Sidebar --%>
         <aside
-          id="lab-sidebar"
+          id="sidebar-aside"
           class="shrink-0 flex flex-col py-6 px-2 overflow-hidden transition-[width] duration-200 ease-in-out"
           style="background: #1c3a13; width: 224px;"
         >
           <%!-- Section label — hidden when collapsed --%>
           <p
-            id="lab-sidebar-label"
+            id="sidebar-label"
             class="px-3 mb-4 text-xs font-medium uppercase tracking-widest whitespace-nowrap overflow-hidden transition-opacity duration-150"
             style="color: rgba(211,250,153,0.6);"
           >
-            Lab
+            {@section_label}
           </p>
 
           <nav class="flex flex-col gap-0.5">
-            <%= for {label, icon, path} <- [
-              {"Dashboard",          "hero-squares-2x2",             ~p"/lab"},
-              {"Orders",             "hero-clipboard-document-list", ~p"/lab/orders"},
-              {"Verification queue", "hero-check-badge",             ~p"/lab/verification-queue"},
-              {"Receive stock",      "hero-arrow-down-tray",         ~p"/lab/receive-stock"},
-              {"Scan",               "hero-qr-code",                 ~p"/lab/scan"}
-            ] do %>
+            <%= for {label, icon, path} <- @nav_items do %>
               <% active =
-                if path == ~p"/lab",
-                  do: @current_path == "/lab",
+                if path == @base_path,
+                  do: @current_path == @base_path,
                   else: String.starts_with?(@current_path, path) %>
               <.link
                 navigate={path}
@@ -197,7 +253,7 @@ defmodule ThamaniDawaWeb.Layouts do
                 }
               >
                 <.icon name={icon} class="size-4 shrink-0" />
-                <span id={"lab-nav-label-#{path}"} class="transition-opacity duration-150">
+                <span id={"nav-label-#{path}"} class="transition-opacity duration-150">
                   {label}
                 </span>
               </.link>
@@ -216,7 +272,7 @@ defmodule ThamaniDawaWeb.Layouts do
                 {String.at(@current_scope.user.name || "U", 0)}
               </div>
               <div
-                id="lab-sidebar-profile"
+                id="sidebar-profile"
                 class="flex flex-col transition-opacity duration-150 whitespace-nowrap overflow-hidden"
               >
                 <span class="text-sm font-medium" style="color: #fcfcf7;">{@current_scope.user.name}</span>
@@ -237,7 +293,7 @@ defmodule ThamaniDawaWeb.Layouts do
                 class="size-4 shrink-0 group-hover:text-red-400 transition-colors"
               />
               <span
-                id="lab-nav-label-logout"
+                id="nav-label-logout"
                 class="transition-opacity duration-150 group-hover:text-red-400"
               >
                 Log out
@@ -257,19 +313,19 @@ defmodule ThamaniDawaWeb.Layouts do
       <.flash_group flash={@flash} />
     </div>
 
-    <script :type={Phoenix.LiveView.ColocatedHook} name=".LabSidebar">
+    <script :type={Phoenix.LiveView.ColocatedHook} name=".Sidebar">
       export default {
         mounted() {
-          const sidebar = document.getElementById("lab-sidebar");
-          const toggleBtn = document.getElementById("lab-sidebar-toggle");
-          const label = document.getElementById("lab-sidebar-label");
-          const profile = document.getElementById("lab-sidebar-profile");
-          let collapsed = localStorage.getItem("lab-sidebar-collapsed") === "true";
+          const sidebar = document.getElementById("sidebar-aside");
+          const toggleBtn = document.getElementById("sidebar-toggle");
+          const label = document.getElementById("sidebar-label");
+          const profile = document.getElementById("sidebar-profile");
+          let collapsed = localStorage.getItem("sidebar-collapsed") === "true";
 
           const apply = () => {
             if (collapsed) {
               sidebar.style.width = "56px";
-              sidebar.querySelectorAll("span[id^='lab-nav-label-']").forEach(el => {
+              sidebar.querySelectorAll("span[id^='nav-label-']").forEach(el => {
                 el.style.opacity = "0";
                 el.style.width = "0";
                 el.style.overflow = "hidden";
@@ -278,7 +334,7 @@ defmodule ThamaniDawaWeb.Layouts do
               if (profile) { profile.style.opacity = "0"; profile.style.width = "0"; }
             } else {
               sidebar.style.width = "224px";
-              sidebar.querySelectorAll("span[id^='lab-nav-label-']").forEach(el => {
+              sidebar.querySelectorAll("span[id^='nav-label-']").forEach(el => {
                 el.style.opacity = "1";
                 el.style.width = "";
                 el.style.overflow = "";
@@ -286,7 +342,7 @@ defmodule ThamaniDawaWeb.Layouts do
               if (label) { label.style.opacity = "1"; label.style.height = ""; label.style.marginBottom = ""; }
               if (profile) { profile.style.opacity = "1"; profile.style.width = ""; }
             }
-            localStorage.setItem("lab-sidebar-collapsed", collapsed);
+            localStorage.setItem("sidebar-collapsed", collapsed);
           };
 
           apply();
