@@ -176,7 +176,8 @@ defmodule ThamaniDawaWeb.Layouts do
               {"Orders",             "hero-clipboard-document-list", ~p"/lab/orders"},
               {"Verification queue", "hero-check-badge",             ~p"/lab/verification-queue"},
               {"Receive stock",      "hero-arrow-down-tray",         ~p"/lab/receive-stock"},
-              {"Scan",               "hero-qr-code",                 ~p"/lab/scan"}
+              {"Scan",               "hero-qr-code",                 ~p"/lab/scan"},
+              {"Products",           "hero-archive-box",             ~p"/lab/products"}
             ] do %>
               <% active =
                 if path == ~p"/lab",
