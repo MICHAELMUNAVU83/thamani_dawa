@@ -96,6 +96,20 @@ defmodule ThamaniDawa.AccountsTest do
       assert %{site_id: ["must belong to the same organization"]} = errors_on(changeset)
     end
 
+    test "rejects a site_id that does not exist at all" do
+      organization = organization_fixture()
+
+      assert {:error, changeset} =
+               Accounts.invite_user(organization.id, nil, %{
+                 name: "New Hire",
+                 email: valid_user_email(),
+                 role: :pharmacist,
+                 site_id: 999_999
+               })
+
+      assert %{site_id: ["must belong to the same organization"]} = errors_on(changeset)
+    end
+
     test "requires a role" do
       organization = organization_fixture()
 
@@ -106,6 +120,53 @@ defmodule ThamaniDawa.AccountsTest do
                })
 
       assert %{role: ["can't be blank"]} = errors_on(changeset)
+    end
+
+    test "rejects a role outside admin, pharmacist, and lab_technician" do
+      organization = organization_fixture()
+
+      assert {:error, changeset} =
+               Accounts.invite_user(organization.id, nil, %{
+                 name: "New Hire",
+                 email: valid_user_email(),
+                 role: "owner"
+               })
+
+      assert %{role: ["is invalid"]} = errors_on(changeset)
+    end
+
+    for role <- [:admin, :pharmacist, :lab_technician] do
+      test "accepts the #{role} role" do
+        organization = organization_fixture()
+
+        assert {:ok, user, _encoded_token} =
+                 Accounts.invite_user(organization.id, nil, %{
+                   name: "New Hire",
+                   email: valid_user_email(),
+                   role: unquote(role)
+                 })
+
+        assert user.role == unquote(role)
+      end
+    end
+
+    test "persists an invite token tied to the invited user" do
+      organization = organization_fixture()
+
+      assert {:ok, user, encoded_token} =
+               Accounts.invite_user(organization.id, nil, %{
+                 name: "New Hire",
+                 email: valid_user_email(),
+                 role: :pharmacist
+               })
+
+      assert {:ok, hashed_token} = UserToken.verify_email_token_query(encoded_token, "invite")
+      assert %User{id: id} = Repo.one(hashed_token)
+      assert id == user.id
+
+      assert Repo.exists?(
+               from t in UserToken, where: t.user_id == ^user.id and t.context == "invite"
+             )
     end
   end
 
