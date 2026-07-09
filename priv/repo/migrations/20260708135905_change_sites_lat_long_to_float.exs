@@ -10,8 +10,8 @@ defmodule ThamaniDawa.Repo.Migrations.ChangeSitesLatLongToFloat do
 
   def down do
     alter table(:sites) do
-      modify :lat, :integer, from: :float, using: "round(lat)"
-      modify :long, :integer, from: :float, using: "round(long)"
+      modify :lat, :integer, from: :float, using: "round(lat)::integer"
+      modify :long, :integer, from: :float, using: "round(long)::integer"
     end
   end
 end
