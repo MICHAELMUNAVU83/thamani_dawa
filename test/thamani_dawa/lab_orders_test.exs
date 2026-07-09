@@ -17,7 +17,7 @@ defmodule ThamaniDawa.LabOrdersTest do
     lab_request: "CBC panel",
     referring_facility: "General Hospital",
     referring_doctor: "Dr. Jane Doe",
-    referred_date: ~U[2025-01-01 09:00:00Z]
+    referred_date: ~T[09:00:00]
   }
 
   describe "create_lab_order/2" do
