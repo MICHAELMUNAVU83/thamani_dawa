@@ -22,6 +22,21 @@ defmodule ThamaniDawa.OrganizationsTest do
       assert organization.is_active
     end
 
+    test "ignores client-supplied server-controlled flags, e.g. is_subscription_active" do
+      assert {:ok, organization} =
+               Organizations.create_organization(%{
+                 name: "Acme Pharmacy",
+                 license_number: "LIC-1",
+                 is_active: false,
+                 is_subscription_active: true,
+                 kyc_details: %{"verified" => true}
+               })
+
+      assert organization.is_active
+      refute organization.is_subscription_active
+      assert organization.kyc_details == %{}
+    end
+
     test "requires a name" do
       assert {:error, changeset} =
                Organizations.create_organization(%{license_number: "LIC-1"})
@@ -112,6 +127,20 @@ defmodule ThamaniDawa.OrganizationsTest do
         assert %{name: ["An organization with a similar name already exists"]} =
                  errors_on(changeset)
       end
+    end
+
+    test "normalizes an explicitly-given slug the same way as an auto-generated one" do
+      organization_fixture(%{name: "PharmaPlus"})
+
+      assert {:error, changeset} =
+               Organizations.create_organization(%{
+                 name: "Other Pharmacy",
+                 slug: "Pharma-Plus",
+                 license_number: "LIC-2"
+               })
+
+      assert %{name: ["An organization with a similar name already exists"]} =
+               errors_on(changeset)
     end
   end
 

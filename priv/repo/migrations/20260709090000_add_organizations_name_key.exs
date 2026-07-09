@@ -42,7 +42,11 @@ defmodule ThamaniDawa.Repo.Migrations.AddOrganizationsNameKey do
 
   defp duplicate_name_keys do
     %{rows: rows} =
-      repo().query!("SELECT name_key FROM organizations GROUP BY name_key HAVING count(*) > 1")
+      repo().query!("""
+      SELECT name_key FROM organizations
+      WHERE name_key IS NOT NULL
+      GROUP BY name_key HAVING count(*) > 1
+      """)
 
     List.flatten(rows)
   end

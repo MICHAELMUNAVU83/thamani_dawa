@@ -2,12 +2,9 @@ defmodule ThamaniDawa.Organizations.Organization do
   use Ecto.Schema
   import Ecto.Changeset
 
-  # The signup/settings forms only render a `:name` input, not `:slug` or
-  # `:name_key` -- every uniqueness error below is deliberately attached to
-  # `:name` (via `unique_constraint`'s `:name` option pointing at the
-  # underlying DB index) so the message actually reaches the user, even
-  # though the collision is on a derived field.
   @similar_name_message "An organization with a similar name already exists"
+  @slug_index :organizations_slug_index
+  @name_key_index :organizations_name_key_index
 
   schema "organizations" do
     field :name, :string
@@ -24,24 +21,14 @@ defmodule ThamaniDawa.Organizations.Organization do
   @doc false
   def changeset(organization, attrs) do
     organization
-    |> cast(attrs, [
-      :name,
-      :slug,
-      :license_number,
-      :is_active,
-      :is_subscription_active,
-      :kyc_details
-    ])
+    |> cast(attrs, [:name, :slug, :license_number])
     |> validate_required([:name], message: "Please enter your organization name")
     |> validate_required([:license_number], message: "Please enter your license number")
     |> maybe_generate_slug()
     |> put_name_key()
     |> unique_constraint(:name, message: "An organization with this name already exists")
-    |> unique_constraint(:name, name: :organizations_slug_index, message: @similar_name_message)
-    |> unique_constraint(:name,
-      name: :organizations_name_key_index,
-      message: @similar_name_message
-    )
+    |> unique_constraint(:name, name: @slug_index, message: @similar_name_message)
+    |> unique_constraint(:name, name: @name_key_index, message: @similar_name_message)
   end
 
   defp maybe_generate_slug(changeset) do
@@ -63,15 +50,18 @@ defmodule ThamaniDawa.Organizations.Organization do
 
   defp put_generated_slug(changeset, slug), do: put_change(changeset, :slug, slug)
 
-  # Derived from the (already accent/case-normalized) slug, with separators
-  # stripped entirely -- so "PharmaPlus", "Pharma-Plus", "Pharma Plus", and
-  # "pharmaplus" all collapse to the same key and are treated as duplicates,
-  # even though they'd produce different human-readable slugs.
   defp put_name_key(changeset) do
     case get_field(changeset, :slug) do
       nil -> changeset
-      slug -> put_change(changeset, :name_key, String.replace(slug, "-", ""))
+      slug -> put_change(changeset, :name_key, normalize_name_key(slug))
     end
+  end
+
+  defp normalize_name_key(text) do
+    text
+    |> String.downcase()
+    |> String.normalize(:nfd)
+    |> String.replace(~r/[^a-z0-9]/u, "")
   end
 
   defp slugify(text) do
