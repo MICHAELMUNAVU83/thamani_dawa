@@ -71,6 +71,233 @@ defmodule ThamaniDawaWeb.Layouts do
     """
   end
 
+  @doc """
+  Renders the authenticated lab shell: a sticky Forest Depths top bar plus a
+  collapsible Forest Depths sidebar with quick-links to every lab section.
+  Active links are highlighted with a Lime Pulse pill background — no borders.
+
+  ## Examples
+
+      <Layouts.lab_shell flash={@flash} current_scope={@current_scope} current_path="/lab/orders">
+        <h1>Content</h1>
+      </Layouts.lab_shell>
+  """
+  attr :flash, :map, required: true
+  attr :current_scope, :map, required: true
+  attr :current_path, :string, default: ""
+
+  slot :inner_block, required: true
+
+  def lab_shell(assigns) do
+    ~H"""
+    <div
+      id="lab-shell"
+      class="min-h-screen"
+      style="background: #fcfcf7; font-family: var(--font-thamani-sans, sans-serif);"
+      phx-hook=".LabSidebar"
+    >
+      <%!-- Top navigation bar --%>
+      <header
+        id="lab-topbar"
+        class="sticky top-0 z-30 flex items-center gap-3 px-4"
+        style="background: #1c3a13; height: 56px;"
+      >
+        <%!-- Sidebar toggle --%>
+        <button
+          id="lab-sidebar-toggle"
+          type="button"
+          aria-label="Toggle sidebar"
+          class="flex items-center justify-center rounded-lg p-1.5 transition-colors cursor-pointer"
+          style="color: rgba(252,252,247,0.7);"
+        >
+          <.icon name="hero-bars-3" class="size-5" />
+        </button>
+
+        <a
+          href={~p"/"}
+          class="font-semibold text-sm tracking-wide"
+          style="color: #fcfcf7;"
+        >
+          Thamani Dawa
+        </a>
+
+        <div class="flex-1" />
+
+        <nav class="flex items-center gap-1">
+          <.link
+            :if={ThamaniDawa.Accounts.Scope.admin?(@current_scope)}
+            navigate={~p"/org/team"}
+            class="px-3 py-1.5 rounded-full text-xs font-medium transition-colors"
+            style="color: rgba(252,252,247,0.7);"
+          >
+            Team
+          </.link>
+          <.link
+            :if={ThamaniDawa.Accounts.Scope.admin?(@current_scope)}
+            navigate={~p"/org/sites"}
+            class="px-3 py-1.5 rounded-full text-xs font-medium transition-colors"
+            style="color: rgba(252,252,247,0.7);"
+          >
+            Sites
+          </.link>
+          <.link
+            :if={
+              ThamaniDawa.Accounts.Scope.admin?(@current_scope) or
+                ThamaniDawa.Accounts.Scope.pharmacist?(@current_scope)
+            }
+            navigate={~p"/pharmacy"}
+            class="px-3 py-1.5 rounded-full text-xs font-medium transition-colors"
+            style="color: rgba(252,252,247,0.7);"
+          >
+            Pharmacy
+          </.link>
+        </nav>
+      </header>
+
+      <div class="flex" style="min-height: calc(100vh - 56px);">
+        <%!-- Sidebar --%>
+        <aside
+          id="lab-sidebar"
+          class="shrink-0 flex flex-col py-6 px-2 overflow-hidden transition-[width] duration-200 ease-in-out"
+          style="background: #1c3a13; width: 224px;"
+        >
+          <%!-- Section label — hidden when collapsed --%>
+          <p
+            id="lab-sidebar-label"
+            class="px-3 mb-4 text-xs font-medium uppercase tracking-widest whitespace-nowrap overflow-hidden transition-opacity duration-150"
+            style="color: rgba(211,250,153,0.6);"
+          >
+            Lab
+          </p>
+
+          <nav class="flex flex-col gap-0.5">
+            <%= for {label, icon, path} <- [
+              {"Dashboard",          "hero-squares-2x2",             ~p"/lab"},
+              {"Orders",             "hero-clipboard-document-list", ~p"/lab/orders"},
+              {"Verification queue", "hero-check-badge",             ~p"/lab/verification-queue"},
+              {"Receive stock",      "hero-arrow-down-tray",         ~p"/lab/receive-stock"},
+              {"Scan",               "hero-qr-code",                 ~p"/lab/scan"}
+            ] do %>
+              <% active =
+                if path == ~p"/lab",
+                  do: @current_path == "/lab",
+                  else: String.starts_with?(@current_path, path) %>
+              <.link
+                navigate={path}
+                class={[
+                  "group flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap overflow-hidden"
+                ]}
+                style={
+                  if active,
+                    do: "background: #d3fa99; color: #1c3a13; font-weight: 500;",
+                    else: "color: rgba(252,252,247,0.88);"
+                }
+              >
+                <.icon name={icon} class="size-4 shrink-0" />
+                <span id={"lab-nav-label-#{path}"} class="transition-opacity duration-150">
+                  {label}
+                </span>
+              </.link>
+            <% end %>
+          </nav>
+
+          <div
+            class="mt-auto pt-4 flex flex-col gap-2 overflow-hidden transition-all duration-150"
+            style="border-top: 1px solid rgba(252,252,247,0.08);"
+          >
+            <div class="px-3 flex items-center gap-3">
+              <div
+                class="size-8 rounded-full flex items-center justify-center shrink-0 text-sm font-semibold"
+                style="background: rgba(252,252,247,0.1); color: #d3fa99;"
+              >
+                {String.at(@current_scope.user.name || "U", 0)}
+              </div>
+              <div
+                id="lab-sidebar-profile"
+                class="flex flex-col transition-opacity duration-150 whitespace-nowrap overflow-hidden"
+              >
+                <span class="text-sm font-medium" style="color: #fcfcf7;">{@current_scope.user.name}</span>
+                <span class="text-xs" style="color: rgba(252,252,247,0.5);">
+                  {current_site_name(@current_scope)}
+                </span>
+              </div>
+            </div>
+
+            <.link
+              href={~p"/logout"}
+              method="delete"
+              class="mx-2 mt-1 px-3 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-3 group hover:bg-red-500/10"
+              style="color: rgba(252,252,247,0.65);"
+            >
+              <.icon
+                name="hero-arrow-right-start-on-rectangle"
+                class="size-4 shrink-0 group-hover:text-red-400 transition-colors"
+              />
+              <span
+                id="lab-nav-label-logout"
+                class="transition-opacity duration-150 group-hover:text-red-400"
+              >
+                Log out
+              </span>
+            </.link>
+          </div>
+        </aside>
+
+        <%!-- Main content --%>
+        <main class="flex-1 px-6 py-8 overflow-auto min-w-0" style="background: #fcfcf7;">
+          <div class="mx-auto max-w-5xl space-y-4">
+            {render_slot(@inner_block)}
+          </div>
+        </main>
+      </div>
+
+      <.flash_group flash={@flash} />
+    </div>
+
+    <script :type={Phoenix.LiveView.ColocatedHook} name=".LabSidebar">
+      export default {
+        mounted() {
+          const sidebar = document.getElementById("lab-sidebar");
+          const toggleBtn = document.getElementById("lab-sidebar-toggle");
+          const label = document.getElementById("lab-sidebar-label");
+          const profile = document.getElementById("lab-sidebar-profile");
+          let collapsed = localStorage.getItem("lab-sidebar-collapsed") === "true";
+
+          const apply = () => {
+            if (collapsed) {
+              sidebar.style.width = "56px";
+              sidebar.querySelectorAll("span[id^='lab-nav-label-']").forEach(el => {
+                el.style.opacity = "0";
+                el.style.width = "0";
+                el.style.overflow = "hidden";
+              });
+              if (label) { label.style.opacity = "0"; label.style.height = "0"; label.style.marginBottom = "0"; }
+              if (profile) { profile.style.opacity = "0"; profile.style.width = "0"; }
+            } else {
+              sidebar.style.width = "224px";
+              sidebar.querySelectorAll("span[id^='lab-nav-label-']").forEach(el => {
+                el.style.opacity = "1";
+                el.style.width = "";
+                el.style.overflow = "";
+              });
+              if (label) { label.style.opacity = "1"; label.style.height = ""; label.style.marginBottom = ""; }
+              if (profile) { profile.style.opacity = "1"; profile.style.width = ""; }
+            }
+            localStorage.setItem("lab-sidebar-collapsed", collapsed);
+          };
+
+          apply();
+
+          toggleBtn && toggleBtn.addEventListener("click", () => {
+            collapsed = !collapsed;
+            apply();
+          });
+        }
+      }
+    </script>
+    """
+  end
+
   defp current_site_name(%Scope{user: %{site_id: nil}}), do: "All sites"
 
   defp current_site_name(%Scope{user: %{site_id: site_id}, organization_id: organization_id}) do

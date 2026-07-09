@@ -58,7 +58,15 @@ defmodule ThamaniDawaWeb.PharmacyDashboardLive do
   def render(assigns) do
     ~H"""
     <Layouts.app_shell flash={@flash} current_scope={@current_scope}>
-      <.header>Pharmacy dashboard</.header>
+      <.header>
+        Pharmacy dashboard
+        <:actions>
+          <.link navigate={~p"/pharmacy/products"} class="btn btn-outline btn-sm">Product Catalog</.link>
+          <.link navigate={~p"/pharmacy/receive-stock"} class="btn btn-outline btn-sm">Receive Stock</.link>
+          <.link navigate={~p"/pharmacy/prescriptions"} class="btn btn-outline btn-sm">Prescriptions</.link>
+          <.link navigate={~p"/pharmacy/scan"} class="btn btn-outline btn-sm">Scan</.link>
+        </:actions>
+      </.header>
 
       <.header class="mt-4">
         Low stock
@@ -87,7 +95,7 @@ defmodule ThamaniDawaWeb.PharmacyDashboardLive do
       <.table
         id="pending-prescriptions"
         rows={@pending_prescriptions}
-        row_click={&~p"/pharmacy/prescriptions/#{&1.id}"}
+        row_click={&JS.navigate(~p"/pharmacy/prescriptions/#{&1.id}")}
       >
         <:col :let={prescription} label="Status">{Phoenix.Naming.humanize(prescription.status)}</:col>
         <:col :let={prescription} label="Total">{prescription.total_amount}</:col>

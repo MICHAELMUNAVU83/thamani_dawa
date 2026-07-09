@@ -12,7 +12,7 @@ defmodule ThamaniDawaWeb.ProductLive.Index do
      socket
      |> assign(:search, "")
      |> assign(:sites, Sites.list_sites(organization_id))
-     |> assign_products()}
+     |> stream(:products, Products.list_products(organization_id))}
   end
 
   def handle_params(params, _url, socket) do
@@ -34,7 +34,24 @@ defmodule ThamaniDawaWeb.ProductLive.Index do
   end
 
   def handle_event("search", %{"search" => search}, socket) do
-    {:noreply, assign(socket, :search, search)}
+    organization_id = socket.assigns.current_scope.organization_id
+    products = Products.list_products(organization_id)
+    filtered = filtered_products(products, search)
+
+    {:noreply,
+     socket
+     |> assign(:search, search)
+     |> stream(:products, filtered, reset: true)}
+  end
+
+  def handle_event("validate", %{"product" => attrs}, socket) do
+    changeset =
+      socket.assigns.product
+      |> Kernel.||(%Product{})
+      |> Product.changeset(attrs)
+      |> Map.put(:action, :validate)
+
+    {:noreply, assign(socket, form: to_form(changeset, as: :product))}
   end
 
   def handle_event("save", %{"product" => attrs}, socket) do
@@ -45,11 +62,11 @@ defmodule ThamaniDawaWeb.ProductLive.Index do
     organization_id = socket.assigns.current_scope.organization_id
 
     case Products.create_product(organization_id, attrs) do
-      {:ok, _product} ->
+      {:ok, product} ->
         {:noreply,
          socket
          |> put_flash(:info, "Product created.")
-         |> assign_products()
+         |> stream_insert(:products, product)
          |> push_patch(to: ~p"/pharmacy/products")}
 
       {:error, changeset} ->
@@ -59,21 +76,16 @@ defmodule ThamaniDawaWeb.ProductLive.Index do
 
   defp save_product(socket, :edit, attrs) do
     case Products.update_product(socket.assigns.product, attrs) do
-      {:ok, _product} ->
+      {:ok, product} ->
         {:noreply,
          socket
          |> put_flash(:info, "Product updated.")
-         |> assign_products()
+         |> stream_insert(:products, product)
          |> push_patch(to: ~p"/pharmacy/products")}
 
       {:error, changeset} ->
         {:noreply, assign(socket, :form, to_form(changeset, as: :product))}
     end
-  end
-
-  defp assign_products(socket) do
-    organization_id = socket.assigns.current_scope.organization_id
-    assign(socket, :products, Products.list_products(organization_id))
   end
 
   defp filtered_products(products, search) do
@@ -98,55 +110,57 @@ defmodule ThamaniDawaWeb.ProductLive.Index do
       <.header>
         Product catalog
         <:actions>
-          <.button variant="primary" navigate={~p"/pharmacy/products/new"}>+ Add product</.button>
+          <.button variant="primary" patch={~p"/pharmacy/products/new"}>+ Add product</.button>
         </:actions>
       </.header>
 
-      <div :if={@live_action in [:new, :edit]} class="card bg-base-200 mb-4">
-        <div class="card-body">
-          <h2 class="font-semibold mb-2">
-            {if @live_action == :new, do: "Add a product", else: "Edit product"}
-          </h2>
-          <form phx-submit="save">
-            <.input
-              field={@form[:site_id]}
-              type="select"
-              label="Site"
-              options={Enum.map(@sites, &{&1.name, &1.id})}
-              prompt="Choose a site"
-              required
-            />
-            <.input field={@form[:price]} type="number" label="Price" required />
-            <.input field={@form[:generic_name]} label="Generic name" />
-            <.input field={@form[:brand_name]} label="Brand name" />
-            <.input field={@form[:category]} label="Category" />
-            <.input field={@form[:uom]} label="Unit of measure" />
-            <.input field={@form[:gtin]} label="GTIN" />
-            <.input field={@form[:is_otc]} type="checkbox" label="Over-the-counter" />
-            <.input field={@form[:is_dangerous_drug]} type="checkbox" label="Dangerous drug" />
-            <.input field={@form[:reorder_level]} type="number" label="Reorder level" />
-            <div class="flex gap-2 mt-2">
-              <.button variant="primary">Save</.button>
-              <.button navigate={~p"/pharmacy/products"}>Cancel</.button>
-            </div>
-          </form>
+      <%= if @live_action in [:new, :edit] do %>
+        <div class="card bg-base-200 mb-4">
+          <div class="card-body">
+            <h2 class="font-semibold mb-2">
+              {if @live_action == :new, do: "Add a product", else: "Edit product"}
+            </h2>
+            <.form for={@form} id="product-form" phx-submit="save" phx-change="validate">
+              <.input
+                field={@form[:site_id]}
+                type="select"
+                label="Site"
+                options={Enum.map(@sites, &{&1.name, &1.id})}
+                prompt="Choose a site"
+                required
+              />
+              <.input field={@form[:price]} type="number" label="Price" required />
+              <.input field={@form[:generic_name]} label="Generic name" />
+              <.input field={@form[:brand_name]} label="Brand name" />
+              <.input field={@form[:category]} label="Category" />
+              <.input field={@form[:uom]} label="Unit of measure" />
+              <.input field={@form[:gtin]} label="GTIN" />
+              <.input field={@form[:is_otc]} type="checkbox" label="Over-the-counter" />
+              <.input field={@form[:is_dangerous_drug]} type="checkbox" label="Dangerous drug" />
+              <.input field={@form[:reorder_level]} type="number" label="Reorder level" />
+              <div class="flex gap-2 mt-2">
+                <.button variant="primary">Save</.button>
+                <.button patch={~p"/pharmacy/products"}>Cancel</.button>
+              </div>
+            </.form>
+          </div>
         </div>
-      </div>
+      <% end %>
 
-      <form phx-change="search" class="mb-4">
+      <form phx-change="search" class="mb-4" id="search-form">
         <.input name="search" value={@search} placeholder="Search by name, GTIN, or category" />
       </form>
 
       <.table
         id="products"
-        rows={filtered_products(@products, @search)}
-        row_click={&~p"/pharmacy/products/#{&1.id}"}
+        rows={@streams.products}
+        row_click={fn {_id, product} -> JS.navigate(~p"/pharmacy/products/#{product.id}") end}
       >
-        <:col :let={product} label="Name">{product_name(product)}</:col>
-        <:col :let={product} label="Category">{product.category}</:col>
-        <:col :let={product} label="GTIN">{product.gtin}</:col>
-        <:action :let={product}>
-          <.link navigate={~p"/pharmacy/products/#{product.id}/edit"} class="link">Edit</.link>
+        <:col :let={{_id, product}} label="Name">{product_name(product)}</:col>
+        <:col :let={{_id, product}} label="Category">{product.category}</:col>
+        <:col :let={{_id, product}} label="GTIN">{product.gtin}</:col>
+        <:action :let={{_id, product}}>
+          <.link patch={~p"/pharmacy/products/#{product.id}/edit"} class="link">Edit</.link>
         </:action>
       </.table>
     </Layouts.app_shell>

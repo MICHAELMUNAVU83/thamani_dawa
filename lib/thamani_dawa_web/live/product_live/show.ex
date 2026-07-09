@@ -24,7 +24,7 @@ defmodule ThamaniDawaWeb.ProductLive.Show do
       <.header>
         {product_name(@product)}
         <:actions>
-          <.button navigate={~p"/pharmacy/products/#{@product.id}/edit"}>Edit</.button>
+          <.button variant="ghost-edit" navigate={~p"/pharmacy/products/#{@product.id}/edit"}>Edit</.button>
           <.button navigate={~p"/pharmacy/products"}>Back</.button>
         </:actions>
       </.header>
