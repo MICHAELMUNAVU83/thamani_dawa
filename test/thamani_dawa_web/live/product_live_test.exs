@@ -22,13 +22,13 @@ defmodule ThamaniDawaWeb.ProductLiveTest do
           generic_name: "Test Aspirin"
         })
 
-      {:ok, _lv, html} = live(log_in_user(conn, admin), ~p"/pharmacy/products")
+      {:ok, _lv, html} = live(log_in_user(conn, admin), ~p"/org/products")
 
       assert html =~ "Test Aspirin"
     end
 
     test "creates a new product", %{conn: conn, admin: admin, site: site} do
-      {:ok, lv, _html} = live(log_in_user(conn, admin), ~p"/pharmacy/products")
+      {:ok, lv, _html} = live(log_in_user(conn, admin), ~p"/org/products")
 
       # Click Add product
       lv |> element("a", "+ Add product") |> render_click()
@@ -60,7 +60,7 @@ defmodule ThamaniDawaWeb.ProductLiveTest do
           generic_name: "Old Name"
         })
 
-      {:ok, lv, _html} = live(log_in_user(conn, admin), ~p"/pharmacy/products")
+      {:ok, lv, _html} = live(log_in_user(conn, admin), ~p"/org/products")
 
       # Click Edit
       lv |> element("a", "Edit") |> render_click()
@@ -95,7 +95,7 @@ defmodule ThamaniDawaWeb.ProductLiveTest do
         generic_name: "Amoxil"
       })
 
-      {:ok, lv, _html} = live(log_in_user(conn, admin), ~p"/pharmacy/products")
+      {:ok, lv, _html} = live(log_in_user(conn, admin), ~p"/org/products")
 
       assert render(lv) =~ "Panadol"
       assert render(lv) =~ "Amoxil"
@@ -129,7 +129,7 @@ defmodule ThamaniDawaWeb.ProductLiveTest do
           remaining_quantity: 50
         })
 
-      {:ok, _lv, html} = live(log_in_user(conn, admin), ~p"/pharmacy/products/#{product.id}")
+      {:ok, _lv, html} = live(log_in_user(conn, admin), ~p"/org/products/#{product.id}")
 
       assert html =~ "Show Me Product"
       assert html =~ "99"

@@ -12,17 +12,7 @@ defmodule ThamaniDawaWeb.ProductLive.Index do
      socket
      |> assign(:search, "")
      |> assign(:sites, Sites.list_sites(organization_id))
-     |> assign(:base_path, base_path(socket))
-     |> stream(
-       :products,
-       Products.list_products(organization_id, site_id: socket.assigns.current_scope.user.site_id)
-     )}
-  end
-
-  defp base_path(socket) do
-    if socket.assigns.current_scope.user.role == :lab_technician,
-      do: "/lab/products",
-      else: "/pharmacy/products"
+     |> stream(:products, Products.list_products(organization_id))}
   end
 
   def handle_params(params, _url, socket) do
@@ -46,9 +36,7 @@ defmodule ThamaniDawaWeb.ProductLive.Index do
   def handle_event("search", %{"search" => search}, socket) do
     organization_id = socket.assigns.current_scope.organization_id
 
-    products =
-      Products.list_products(organization_id, site_id: socket.assigns.current_scope.user.site_id)
-
+    products = Products.list_products(organization_id)
     filtered = filtered_products(products, search)
 
     {:noreply,
@@ -80,7 +68,7 @@ defmodule ThamaniDawaWeb.ProductLive.Index do
          socket
          |> put_flash(:info, "Product created.")
          |> stream_insert(:products, product)
-         |> push_patch(to: base_path(socket))}
+         |> push_patch(to: ~p"/org/products")}
 
       {:error, changeset} ->
         {:noreply, assign(socket, :form, to_form(changeset, as: :product))}
@@ -94,7 +82,7 @@ defmodule ThamaniDawaWeb.ProductLive.Index do
          socket
          |> put_flash(:info, "Product updated.")
          |> stream_insert(:products, product)
-         |> push_patch(to: base_path(socket))}
+         |> push_patch(to: ~p"/org/products")}
 
       {:error, changeset} ->
         {:noreply, assign(socket, :form, to_form(changeset, as: :product))}
@@ -119,76 +107,64 @@ defmodule ThamaniDawaWeb.ProductLive.Index do
 
   def render(assigns) do
     ~H"""
-    <%= if @current_scope.user.role == :lab_technician do %>
-      <Layouts.lab_shell flash={@flash} current_scope={@current_scope} current_path={@base_path}>
-        <.products_content {assigns} />
-      </Layouts.lab_shell>
-    <% else %>
-      <Layouts.app_shell flash={@flash} current_scope={@current_scope}>
-        <.products_content {assigns} />
-      </Layouts.app_shell>
-    <% end %>
-    """
-  end
+    <Layouts.app_shell flash={@flash} current_scope={@current_scope}>
+      <.header>
+        Product catalog
+        <:actions>
+          <.button variant="primary" patch={~p"/org/products/new"}>+ Add product</.button>
+        </:actions>
+      </.header>
 
-  def products_content(assigns) do
-    ~H"""
-    <.header>
-      Product catalog
-      <:actions>
-        <.button variant="primary" patch={"#{@base_path}/new"}>+ Add product</.button>
-      </:actions>
-    </.header>
-
-    <%= if @live_action in [:new, :edit] do %>
-      <div class="card bg-base-200 mb-4">
-        <div class="card-body">
-          <h2 class="font-semibold mb-2">
-            {if @live_action == :new, do: "Add a product", else: "Edit product"}
-          </h2>
-          <.form for={@form} id="product-form" phx-submit="save" phx-change="validate">
-            <.input
-              field={@form[:site_id]}
-              type="select"
-              label="Site"
-              options={Enum.map(@sites, &{&1.name, &1.id})}
-              prompt="Choose a site"
-              required
-            />
-            <.input field={@form[:price]} type="number" label="Price" required />
-            <.input field={@form[:generic_name]} label="Generic name" />
-            <.input field={@form[:brand_name]} label="Brand name" />
-            <.input field={@form[:category]} label="Category" />
-            <.input field={@form[:uom]} label="Unit of measure" />
-            <.input field={@form[:gtin]} label="GTIN" />
-            <.input field={@form[:is_otc]} type="checkbox" label="Over-the-counter" />
-            <.input field={@form[:is_dangerous_drug]} type="checkbox" label="Dangerous drug" />
-            <.input field={@form[:reorder_level]} type="number" label="Reorder level" />
-            <div class="flex gap-2 mt-2">
-              <.button variant="primary">Save</.button>
-              <.button patch={@base_path}>Cancel</.button>
-            </div>
-          </.form>
+      <%= if @live_action in [:new, :edit] do %>
+        <div class="card bg-base-200 mb-4">
+          <div class="card-body">
+            <h2 class="font-semibold mb-2">
+              {if @live_action == :new, do: "Add a product", else: "Edit product"}
+            </h2>
+            <.form for={@form} id="product-form" phx-submit="save" phx-change="validate">
+              <.input
+                field={@form[:site_id]}
+                type="select"
+                label="Site"
+                options={Enum.map(@sites, &{&1.name, &1.id})}
+                prompt="Choose a site"
+                required
+              />
+              <.input field={@form[:price]} type="number" label="Price" required />
+              <.input field={@form[:generic_name]} label="Generic name" />
+              <.input field={@form[:brand_name]} label="Brand name" />
+              <.input field={@form[:category]} label="Category" />
+              <.input field={@form[:uom]} label="Unit of measure" />
+              <.input field={@form[:gtin]} label="GTIN" />
+              <.input field={@form[:is_otc]} type="checkbox" label="Over-the-counter" />
+              <.input field={@form[:is_dangerous_drug]} type="checkbox" label="Dangerous drug" />
+              <.input field={@form[:reorder_level]} type="number" label="Reorder level" />
+              <div class="flex gap-2 mt-2">
+                <.button variant="primary">Save</.button>
+                <.button patch={~p"/org/products"}>Cancel</.button>
+              </div>
+            </.form>
+          </div>
         </div>
-      </div>
-    <% end %>
+      <% end %>
 
-    <form phx-change="search" class="mb-4" id="search-form">
-      <.input name="search" value={@search} placeholder="Search by name, GTIN, or category" />
-    </form>
+      <form phx-change="search" class="mb-4" id="search-form">
+        <.input name="search" value={@search} placeholder="Search by name, GTIN, or category" />
+      </form>
 
-    <.table
-      id="products"
-      rows={@streams.products}
-      row_click={fn {_id, product} -> JS.navigate("#{@base_path}/#{product.id}") end}
-    >
-      <:col :let={{_id, product}} label="Name">{product_name(product)}</:col>
-      <:col :let={{_id, product}} label="Category">{product.category}</:col>
-      <:col :let={{_id, product}} label="GTIN">{product.gtin}</:col>
-      <:action :let={{_id, product}}>
-        <.link patch={"#{@base_path}/#{product.id}/edit"} class="link">Edit</.link>
-      </:action>
-    </.table>
+      <.table
+        id="products"
+        rows={@streams.products}
+        row_click={fn {_id, product} -> JS.navigate(~p"/org/products/#{product.id}") end}
+      >
+        <:col :let={{_id, product}} label="Name">{product_name(product)}</:col>
+        <:col :let={{_id, product}} label="Category">{product.category}</:col>
+        <:col :let={{_id, product}} label="GTIN">{product.gtin}</:col>
+        <:action :let={{_id, product}}>
+          <.link patch={~p"/org/products/#{product.id}/edit"} class="link">Edit</.link>
+        </:action>
+      </.table>
+    </Layouts.app_shell>
     """
   end
 end

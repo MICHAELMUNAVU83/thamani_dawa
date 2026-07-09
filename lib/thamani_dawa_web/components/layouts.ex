@@ -46,6 +46,9 @@ defmodule ThamaniDawaWeb.Layouts do
             <li :if={Scope.admin?(@current_scope)}>
               <.link navigate={~p"/org/sites"} class="btn btn-ghost btn-sm">Sites</.link>
             </li>
+            <li :if={Scope.admin?(@current_scope)}>
+              <.link navigate={~p"/org/products"} class="btn btn-ghost btn-sm">Products</.link>
+            </li>
             <li :if={Scope.admin?(@current_scope) or Scope.pharmacist?(@current_scope)}>
               <.link navigate={~p"/pharmacy"} class="btn btn-ghost btn-sm">Pharmacy</.link>
             </li>
@@ -176,8 +179,7 @@ defmodule ThamaniDawaWeb.Layouts do
               {"Orders",             "hero-clipboard-document-list", ~p"/lab/orders"},
               {"Verification queue", "hero-check-badge",             ~p"/lab/verification-queue"},
               {"Receive stock",      "hero-arrow-down-tray",         ~p"/lab/receive-stock"},
-              {"Scan",               "hero-qr-code",                 ~p"/lab/scan"},
-              {"Products",           "hero-archive-box",             ~p"/lab/products"}
+              {"Scan",               "hero-qr-code",                 ~p"/lab/scan"}
             ] do %>
               <% active =
                 if path == ~p"/lab",

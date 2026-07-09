@@ -61,7 +61,6 @@ defmodule ThamaniDawaWeb.PharmacyDashboardLive do
       <.header>
         Pharmacy dashboard
         <:actions>
-          <.link navigate={~p"/pharmacy/products"} class="btn btn-outline btn-sm">Product Catalog</.link>
           <.link navigate={~p"/pharmacy/receive-stock"} class="btn btn-outline btn-sm">Receive Stock</.link>
           <.link navigate={~p"/pharmacy/prescriptions"} class="btn btn-outline btn-sm">Prescriptions</.link>
           <.link navigate={~p"/pharmacy/scan"} class="btn btn-outline btn-sm">Scan</.link>
