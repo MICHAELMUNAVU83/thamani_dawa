@@ -22,16 +22,31 @@ defmodule ThamaniDawa.OrganizationsTest do
       assert organization.is_active
     end
 
+    test "ignores client-supplied server-controlled flags, e.g. is_subscription_active" do
+      assert {:ok, organization} =
+               Organizations.create_organization(%{
+                 name: "Acme Pharmacy",
+                 license_number: "LIC-1",
+                 is_active: false,
+                 is_subscription_active: true,
+                 kyc_details: %{"verified" => true}
+               })
+
+      assert organization.is_active
+      refute organization.is_subscription_active
+      assert organization.kyc_details == %{}
+    end
+
     test "requires a name" do
       assert {:error, changeset} =
                Organizations.create_organization(%{license_number: "LIC-1"})
 
-      assert %{name: ["can't be blank"]} = errors_on(changeset)
+      assert %{name: ["Please enter your organization name"]} = errors_on(changeset)
     end
 
     test "requires a license number" do
       assert {:error, changeset} = Organizations.create_organization(%{name: "Acme Pharmacy"})
-      assert %{license_number: ["can't be blank"]} = errors_on(changeset)
+      assert %{license_number: ["Please enter your license number"]} = errors_on(changeset)
     end
 
     test "auto-generates a slug from the name when none is given" do
@@ -54,6 +69,35 @@ defmodule ThamaniDawa.OrganizationsTest do
       assert organization.slug == "cafe-pharmacy"
     end
 
+    test "still auto-generates a slug when the caller passes an explicit blank one" do
+      assert {:ok, organization} =
+               Organizations.create_organization(%{
+                 name: "Acme Pharmacy",
+                 slug: "",
+                 license_number: "LIC-1"
+               })
+
+      assert organization.slug == "acme-pharmacy"
+    end
+
+    test "rejects a name that slugifies to nothing" do
+      assert {:error, changeset} =
+               Organizations.create_organization(%{name: "!!!", license_number: "LIC-1"})
+
+      assert %{name: ["must contain at least one letter or number"]} = errors_on(changeset)
+    end
+
+    test "rejects an explicit slug that normalizes to nothing" do
+      assert {:error, changeset} =
+               Organizations.create_organization(%{
+                 name: "Acme Pharmacy",
+                 slug: "---",
+                 license_number: "LIC-1"
+               })
+
+      assert %{name: ["must contain at least one letter or number"]} = errors_on(changeset)
+    end
+
     test "requires a unique name" do
       organization_fixture(%{name: "City Pharmacy"})
 
@@ -64,7 +108,7 @@ defmodule ThamaniDawa.OrganizationsTest do
                  license_number: "LIC-2"
                })
 
-      assert %{name: ["has already been taken"]} = errors_on(changeset)
+      assert %{name: ["An organization with this name already exists"]} = errors_on(changeset)
     end
 
     test "enforces slug uniqueness when a slug is given explicitly" do
@@ -77,7 +121,37 @@ defmodule ThamaniDawa.OrganizationsTest do
                  license_number: "LIC-2"
                })
 
-      assert %{slug: ["has already been taken"]} = errors_on(changeset)
+      assert %{name: ["An organization with a similar name already exists"]} =
+               errors_on(changeset)
+    end
+
+    test "rejects names that are case- and punctuation-insensitive duplicates" do
+      organization_fixture(%{name: "PharmaPlus"})
+
+      for name <- ["pharmaplus", "Pharma-Plus", "Pharma Plus"] do
+        assert {:error, changeset} =
+                 Organizations.create_organization(%{
+                   name: name,
+                   license_number: "LIC-#{System.unique_integer()}"
+                 })
+
+        assert %{name: ["An organization with a similar name already exists"]} =
+                 errors_on(changeset)
+      end
+    end
+
+    test "normalizes an explicitly-given slug the same way as an auto-generated one" do
+      organization_fixture(%{name: "PharmaPlus"})
+
+      assert {:error, changeset} =
+               Organizations.create_organization(%{
+                 name: "Other Pharmacy",
+                 slug: "Pharma-Plus",
+                 license_number: "LIC-2"
+               })
+
+      assert %{name: ["An organization with a similar name already exists"]} =
+               errors_on(changeset)
     end
   end
 

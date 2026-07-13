@@ -3,6 +3,7 @@ defmodule ThamaniDawa.AccountsTest do
 
   alias ThamaniDawa.Accounts
   alias ThamaniDawa.Accounts.User
+  alias ThamaniDawa.Accounts.UserToken
 
   import ThamaniDawa.AccountsFixtures
   import ThamaniDawa.OrganizationsFixtures
@@ -26,7 +27,11 @@ defmodule ThamaniDawa.AccountsTest do
       organization = organization_fixture()
       assert {:error, changeset} = Accounts.register_user(organization.id, %{})
 
-      assert %{name: ["can't be blank"], email: ["can't be blank"], password: ["can't be blank"]} =
+      assert %{
+               name: ["Please enter your name"],
+               email: ["Please enter your email"],
+               password: ["Please choose a password"]
+             } =
                errors_on(changeset)
     end
 
@@ -42,7 +47,7 @@ defmodule ThamaniDawa.AccountsTest do
                  valid_user_attributes(%{email: email})
                )
 
-      assert %{email: ["has already been taken"]} = errors_on(changeset)
+      assert %{email: ["This email is already registered"]} = errors_on(changeset)
     end
   end
 
@@ -95,6 +100,20 @@ defmodule ThamaniDawa.AccountsTest do
       assert %{site_id: ["must belong to the same organization"]} = errors_on(changeset)
     end
 
+    test "rejects a site_id that does not exist at all" do
+      organization = organization_fixture()
+
+      assert {:error, changeset} =
+               Accounts.invite_user(organization.id, nil, %{
+                 name: "New Hire",
+                 email: valid_user_email(),
+                 role: :pharmacist,
+                 site_id: 999_999
+               })
+
+      assert %{site_id: ["must belong to the same organization"]} = errors_on(changeset)
+    end
+
     test "requires a role" do
       organization = organization_fixture()
 
@@ -105,6 +124,80 @@ defmodule ThamaniDawa.AccountsTest do
                })
 
       assert %{role: ["can't be blank"]} = errors_on(changeset)
+    end
+
+    test "rejects a role outside admin, pharmacist, and lab_technician" do
+      organization = organization_fixture()
+
+      assert {:error, changeset} =
+               Accounts.invite_user(organization.id, nil, %{
+                 name: "New Hire",
+                 email: valid_user_email(),
+                 role: "owner"
+               })
+
+      assert %{role: ["is invalid"]} = errors_on(changeset)
+    end
+
+    for role <- [:admin, :pharmacist, :lab_technician] do
+      test "accepts the #{role} role" do
+        organization = organization_fixture()
+
+        assert {:ok, user, _encoded_token} =
+                 Accounts.invite_user(organization.id, nil, %{
+                   name: "New Hire",
+                   email: valid_user_email(),
+                   role: unquote(role)
+                 })
+
+        assert user.role == unquote(role)
+      end
+    end
+
+    test "persists an invite token tied to the invited user" do
+      organization = organization_fixture()
+
+      assert {:ok, user, encoded_token} =
+               Accounts.invite_user(organization.id, nil, %{
+                 name: "New Hire",
+                 email: valid_user_email(),
+                 role: :pharmacist
+               })
+
+      assert {:ok, hashed_token} = UserToken.verify_email_token_query(encoded_token, "invite")
+      assert %User{id: id} = Repo.one(hashed_token)
+      assert id == user.id
+
+      assert Repo.exists?(
+               from t in UserToken, where: t.user_id == ^user.id and t.context == "invite"
+             )
+    end
+  end
+
+  describe "deliver_user_invite/5" do
+    test "builds the invite URL from the encoded token and delivers the email" do
+      organization = organization_fixture()
+      admin = user_fixture(%{organization_id: organization.id, name: "Jane Admin"})
+
+      {:ok, user, encoded_token} =
+        Accounts.invite_user(organization.id, admin.id, %{
+          name: "New Hire",
+          email: valid_user_email(),
+          role: :pharmacist
+        })
+
+      assert {:ok, email} =
+               Accounts.deliver_user_invite(
+                 user,
+                 organization.name,
+                 admin.name,
+                 encoded_token,
+                 fn token -> "http://localhost:4000/invites/#{token}" end
+               )
+
+      assert email.subject == "You've been invited to #{organization.name} on Thamani Dawa"
+      assert email.text_body =~ "http://localhost:4000/invites/#{encoded_token}"
+      assert email.text_body =~ "Jane Admin has invited you"
     end
   end
 
@@ -124,6 +217,38 @@ defmodule ThamaniDawa.AccountsTest do
 
       assert {:ok, accepted} = Accounts.accept_invite(invited, %{password: valid_user_password()})
       assert is_binary(accepted.hashed_password)
+    end
+
+    test "returns nil for a reused token, once it's already been accepted" do
+      organization = organization_fixture()
+
+      {:ok, invited, encoded_token} =
+        Accounts.invite_user(organization.id, nil, %{
+          name: "New Hire",
+          email: valid_user_email(),
+          role: :pharmacist
+        })
+
+      assert {:ok, _accepted} =
+               Accounts.accept_invite(invited, %{password: valid_user_password()})
+
+      refute Accounts.get_user_by_invite_token(encoded_token)
+    end
+
+    test "returns nil for an expired token" do
+      organization = organization_fixture()
+
+      {:ok, invited, encoded_token} =
+        Accounts.invite_user(organization.id, nil, %{
+          name: "New Hire",
+          email: valid_user_email(),
+          role: :pharmacist
+        })
+
+      invited
+      |> UserToken.by_user_and_context_query("invite")
+      |> Repo.update_all(set: [inserted_at: DateTime.add(DateTime.utc_now(), -8, :day)])
+
       refute Accounts.get_user_by_invite_token(encoded_token)
     end
 
