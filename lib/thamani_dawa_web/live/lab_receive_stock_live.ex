@@ -131,11 +131,12 @@ defmodule ThamaniDawaWeb.LabReceiveStockLive do
     scope = socket.assigns.current_scope
     site_id_str = Map.get(attrs, "site_id", "")
 
-    if site_id_str != "" and
-         not Map.has_key?(socket.assigns.sites_by_id, String.to_integer(site_id_str)) do
-      {:noreply, put_flash(socket, :error, "Selected site cannot receive lab consumables.")}
-    else
-      walk_in_receive(socket, scope, attrs)
+    case parse_id(site_id_str) do
+      {:ok, site_id} when not is_map_key(socket.assigns.sites_by_id, site_id) ->
+        {:noreply, put_flash(socket, :error, "Selected site cannot receive lab consumables.")}
+
+      _ ->
+        walk_in_receive(socket, scope, attrs)
     end
   end
 
@@ -208,6 +209,15 @@ defmodule ThamaniDawaWeb.LabReceiveStockLive do
       end
 
     stream(socket, :pending_batches, pending, reset: true)
+  end
+
+  defp parse_id(""), do: :empty
+
+  defp parse_id(str) do
+    case Integer.parse(str) do
+      {id, ""} -> {:ok, id}
+      _ -> :error
+    end
   end
 
   defp blank_to_nil(nil), do: nil
