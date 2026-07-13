@@ -74,5 +74,37 @@ defmodule ThamaniDawa.GS1DecoderTest do
     test "errors when the GTIN isn't numeric" do
       assert {:error, {:invalid_digits, _}} = GS1Decoder.parse("01" <> "0061414100001A")
     end
+
+    test "errors when a GLN (AI 414) is truncated" do
+      assert {:error, {:invalid_length, "414"}} = GS1Decoder.parse("414" <> "123")
+    end
+
+    test "errors when a GLN isn't numeric" do
+      assert {:error, {:invalid_digits, _}} = GS1Decoder.parse("414" <> "061414100000A")
+    end
+
+    test "an empty element string decodes to all-nil fields, not an error" do
+      assert {:ok, result} = GS1Decoder.parse("")
+
+      assert result == %{
+               gtin: nil,
+               batch_no: nil,
+               production_date: nil,
+               expiry_date: nil,
+               serial: nil,
+               gln: nil
+             }
+    end
+
+    test "an AI present but with no value decodes to an empty string, not an error" do
+      assert {:ok, result} = GS1Decoder.parse("10" <> "")
+      assert result.batch_no == ""
+    end
+
+    test "when an AI appears twice, the later occurrence wins" do
+      data = "01" <> "00614141000012" <> "01" <> "00614141000029"
+      assert {:ok, result} = GS1Decoder.parse(data)
+      assert result.gtin == "00614141000029"
+    end
   end
 end
