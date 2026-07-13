@@ -50,6 +50,7 @@ defmodule ThamaniDawaWeb.Router do
       live "/org/products", ProductLive.Index, :index
       live "/org/products/new", ProductLive.Index, :new
       live "/org/products/:id", ProductLive.Show, :show
+      live "/org/products/:id/batches/new", ProductLive.Show, :new_batch
       live "/org/products/:id/edit", ProductLive.Index, :edit
     end
 
