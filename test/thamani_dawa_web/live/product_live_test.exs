@@ -154,5 +154,40 @@ defmodule ThamaniDawaWeb.ProductLiveTest do
       assert html =~ "BATCH-001"
       assert html =~ "50"
     end
+
+    test "admin can add a batch to a product from the show page", %{
+      conn: conn,
+      admin: admin,
+      site: site
+    } do
+      product =
+        product_fixture(%{
+          organization_id: admin.organization_id,
+          site_id: site.id,
+          generic_name: "Batchable Drug",
+          gtin: unique_gtin()
+        })
+
+      {:ok, lv, _html} =
+        live(log_in_user(conn, admin), ~p"/org/products/#{product.id}/batches/new")
+
+      lv
+      |> form("#batch-form",
+        batch: %{
+          site_id: site.id,
+          gtin: product.gtin,
+          batch_no: "LOT-ADMIN-1",
+          expiry_date: "2027-06-01",
+          quantity: 200
+        }
+      )
+      |> render_submit()
+
+      assert_patch(lv, ~p"/org/products/#{product.id}")
+      html = render(lv)
+      assert html =~ "Batch added."
+      assert html =~ "LOT-ADMIN-1"
+      assert html =~ "200"
+    end
   end
 end

@@ -48,12 +48,18 @@ defmodule ThamaniDawa.Batches do
     has_remaining? =
       Map.has_key?(attrs, :remaining_quantity) or Map.has_key?(attrs, "remaining_quantity")
 
-    quantity = Map.get(attrs, :quantity) || Map.get(attrs, "quantity")
+    {quantity, string_keys?} =
+      cond do
+        Map.has_key?(attrs, "quantity") -> {Map.get(attrs, "quantity"), true}
+        Map.has_key?(attrs, :quantity) -> {Map.get(attrs, :quantity), false}
+        true -> {nil, false}
+      end
 
     if has_remaining? or is_nil(quantity) do
       attrs
     else
-      Map.put(attrs, :remaining_quantity, quantity)
+      key = if string_keys?, do: "remaining_quantity", else: :remaining_quantity
+      Map.put(attrs, key, quantity)
     end
   end
 
