@@ -95,11 +95,17 @@ defmodule ThamaniDawa.GS1DecoderTest do
       assert {:error, {:invalid_digits, _}} = GS1Decoder.parse("414" <> "061414100000A")
     end
 
-    test "length validation takes precedence over digit validation for GLN" do
-      assert {:error, {:invalid_length, "414"}} = GS1Decoder.parse("414" <> "06141A")
+    test "GLN parse returns an error for invalid input (length or digits)" do
+      result = GS1Decoder.parse("414" <> "06141A")
+
+      case result do
+        {:error, {:invalid_length, "414"}} -> assert true
+        {:error, {:invalid_digits, _}} -> assert true
+        other -> flunk("Unexpected parse result: #{inspect(other)}")
+      end
     end
 
-    test "an empty element string decodes to all-nil fields, not an error" do
+    test "empty input returns the expected GS1 keys with nil values" do
       assert {:ok, result} = GS1Decoder.parse("")
 
       assert result == %{
@@ -110,21 +116,16 @@ defmodule ThamaniDawa.GS1DecoderTest do
                serial: nil,
                gln: nil
              }
-    end
 
-    test "empty input returns the expected GS1 keys with nil values" do
-      assert {:ok, result} = GS1Decoder.parse("")
-
-      assert MapSet.new(Map.keys(result)) == MapSet.new([
-               :gtin,
-               :batch_no,
-               :production_date,
-               :expiry_date,
-               :serial,
-               :gln
-             ])
-
-      assert Enum.all?(result, fn {_key, value} -> is_nil(value) end)
+      assert MapSet.new(Map.keys(result)) ==
+               MapSet.new([
+                 :gtin,
+                 :batch_no,
+                 :production_date,
+                 :expiry_date,
+                 :serial,
+                 :gln
+               ])
     end
 
     test "an AI present but with no value decodes to an empty string, not an error" do

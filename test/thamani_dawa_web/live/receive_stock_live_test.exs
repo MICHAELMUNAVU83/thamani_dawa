@@ -12,13 +12,13 @@ defmodule ThamaniDawaWeb.ReceiveStockLiveTest do
 
       {:ok, lv, _html} = live(log_in_user(conn, user), ~p"/pharmacy/receive-stock")
 
-      html =
-        lv
-        |> form("form[phx-submit='decode_gs1']", raw_gs1: "")
-        |> render_submit()
+      assert has_element?(lv, "form#receive-stock-gs1-form input[name='raw_gs1']")
 
-      refute html =~ "Couldn't decode that code"
-      assert html =~ "Raw GS1 element string"
+      form = form(lv, "#receive-stock-gs1-form", raw_gs1: "")
+
+      render_submit(form)
+
+      refute has_element?(lv, "#gs1-decode-error")
     end
   end
 end

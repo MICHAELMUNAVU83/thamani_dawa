@@ -31,7 +31,8 @@ defmodule ThamaniDawaWeb.ReceiveStockLive do
      |> assign(:site_locked, not is_nil(site_id))
      |> assign(:form, to_form(Batch.changeset(%Batch{}, initial_attrs), as: :batch))
      |> assign(:gs1_used, false)
-     |> assign(:raw_gs1, nil)}
+     |> assign(:raw_gs1, nil)
+     |> assign(:gs1_decode_error, nil)}
   end
 
   def handle_event("decode_gs1", %{"raw_gs1" => raw_gs1}, socket) do
@@ -53,10 +54,12 @@ defmodule ThamaniDawaWeb.ReceiveStockLive do
          socket
          |> assign(:form, to_form(changeset, as: :batch))
          |> assign(:gs1_used, true)
-         |> assign(:raw_gs1, raw_gs1)}
+         |> assign(:raw_gs1, raw_gs1)
+         |> assign(:gs1_decode_error, nil)}
 
       {:error, reason} ->
-        {:noreply, put_flash(socket, :error, "Couldn't decode that code: #{inspect(reason)}")}
+        {:noreply,
+         assign(socket, :gs1_decode_error, "Couldn't decode that code: #{inspect(reason)}")}
     end
   end
 
