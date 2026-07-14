@@ -27,7 +27,7 @@ defmodule ThamaniDawaWeb.LabOrderLive.Index do
 
     socket
     |> assign(:patients, Patients.list_patients(organization_id))
-    |> assign(:lab_tests, LabTests.list_lab_tests(organization_id))
+    |> assign(:lab_tests, LabTests.list_active_lab_tests(organization_id))
     |> assign(:sites, Sites.list_sites(organization_id))
     |> assign(:site_locked, not is_nil(site_id))
     |> assign(:urgencies, @urgencies)
