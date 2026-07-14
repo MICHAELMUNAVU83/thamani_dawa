@@ -44,7 +44,7 @@ defmodule ThamaniDawa.Prescriptions.Prescription do
       :referring_doctor,
       :referral_date
     ])
-    |> validate_required([:payment_type, :referring_doctor])
+    |> validate_required([:patient_visit_id, :payment_type, :referring_doctor])
     |> foreign_key_constraint(:user_id)
     |> foreign_key_constraint(:patient_visit_id)
   end

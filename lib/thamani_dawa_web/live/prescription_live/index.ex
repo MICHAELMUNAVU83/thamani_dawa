@@ -75,8 +75,13 @@ defmodule ThamaniDawaWeb.PrescriptionLive.Index do
     user_id = socket.assigns.current_scope.user.id
 
     if is_nil(patient_id) or patient_id == "" do
-      {:error,
-       Ecto.Changeset.add_error(Patient.changeset(%Patient{}, %{}), :id, "can't be blank")}
+      changeset =
+        %Prescription{}
+        |> Prescription.changeset(header_attrs)
+        |> Ecto.Changeset.add_error(:patient_id, "can't be blank")
+        |> Map.put(:action, :insert)
+
+      {:error, changeset}
     else
       Prescriptions.create_prescription_for_patient(
         organization_id,
