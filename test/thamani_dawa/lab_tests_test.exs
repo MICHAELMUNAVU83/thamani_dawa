@@ -54,4 +54,71 @@ defmodule ThamaniDawa.LabTestsTest do
       end
     end
   end
+
+  describe "update_lab_test/3" do
+    test "updates the name of a lab test" do
+      organization = organization_fixture()
+      lab_test = lab_test_fixture(%{organization_id: organization.id})
+
+      assert {:ok, %LabTest{name: "Updated Name"}} =
+               LabTests.update_lab_test(organization.id, lab_test, %{name: "Updated Name"})
+    end
+
+    test "returns error changeset when name is blank" do
+      organization = organization_fixture()
+      lab_test = lab_test_fixture(%{organization_id: organization.id})
+
+      assert {:error, changeset} =
+               LabTests.update_lab_test(organization.id, lab_test, %{name: ""})
+
+      assert %{name: ["can't be blank"]} = errors_on(changeset)
+    end
+
+    test "raises when the lab test belongs to a different organization" do
+      other_organization = organization_fixture()
+      lab_test = lab_test_fixture()
+
+      assert_raise Ecto.NoResultsError, fn ->
+        LabTests.update_lab_test(other_organization.id, lab_test, %{name: "Hack"})
+      end
+    end
+  end
+
+  describe "change_lab_test/2" do
+    test "returns a changeset pre-populated with the lab test's current data" do
+      organization = organization_fixture()
+      lab_test = lab_test_fixture(%{organization_id: organization.id, name: "Malaria RDT"})
+
+      changeset = LabTests.change_lab_test(lab_test, %{})
+
+      assert changeset.data.name == "Malaria RDT"
+      assert changeset.valid?
+    end
+  end
+
+  describe "list_active_lab_tests/1" do
+    test "returns active tests for the organization" do
+      organization = organization_fixture()
+      active = lab_test_fixture(%{organization_id: organization.id})
+
+      assert [%LabTest{id: id}] = LabTests.list_active_lab_tests(organization.id)
+      assert id == active.id
+    end
+
+    test "excludes inactive tests" do
+      organization = organization_fixture()
+      lab_test = lab_test_fixture(%{organization_id: organization.id})
+      {:ok, _} = LabTests.update_lab_test(organization.id, lab_test, %{is_active: false})
+
+      assert [] = LabTests.list_active_lab_tests(organization.id)
+    end
+
+    test "does not return active tests from another organization" do
+      organization_a = organization_fixture()
+      organization_b = organization_fixture()
+      lab_test_fixture(%{organization_id: organization_b.id})
+
+      assert [] = LabTests.list_active_lab_tests(organization_a.id)
+    end
+  end
 end

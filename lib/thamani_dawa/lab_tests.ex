@@ -24,4 +24,29 @@ defmodule ThamaniDawa.LabTests do
     |> Ecto.Changeset.put_change(:organization_id, organization_id)
     |> Repo.insert()
   end
+
+  @doc "Updates a lab test. Raises if the test does not belong to the given organization."
+  def update_lab_test(organization_id, %LabTest{} = lab_test, attrs) do
+    if lab_test.organization_id != organization_id do
+      raise Ecto.NoResultsError, queryable: LabTest
+    end
+
+    lab_test
+    |> LabTest.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc "Returns a changeset for the given lab test."
+  def change_lab_test(%LabTest{} = lab_test, attrs \\ %{}) do
+    LabTest.changeset(lab_test, attrs)
+  end
+
+  @doc "Lists active (is_active: true) lab tests for an organization, ordered by category then name."
+  def list_active_lab_tests(organization_id) do
+    Repo.all(
+      from t in LabTest,
+        where: t.organization_id == ^organization_id and t.is_active == true,
+        order_by: [asc: t.category, asc: t.name]
+    )
+  end
 end
