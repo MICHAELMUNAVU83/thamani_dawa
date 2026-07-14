@@ -11,7 +11,7 @@ defmodule ThamaniDawaWeb.LabOrderLive.Show do
 
     socket =
       socket
-      |> assign(:lab_tests, LabTests.list_lab_tests(organization_id))
+      |> assign(:lab_tests, LabTests.list_active_lab_tests(organization_id))
       |> load_lab_order(id)
 
     {:ok, socket}

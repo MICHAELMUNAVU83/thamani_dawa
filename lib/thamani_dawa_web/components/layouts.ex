@@ -103,6 +103,7 @@ defmodule ThamaniDawaWeb.Layouts do
       nav_items={[
         {"Dashboard", "hero-squares-2x2", ~p"/lab"},
         {"Orders", "hero-clipboard-document-list", ~p"/lab/orders"},
+        {"Tests", "hero-beaker", ~p"/lab/tests"},
         {"Verification queue", "hero-check-badge", ~p"/lab/verification-queue"},
         {"Receive stock", "hero-arrow-down-tray", ~p"/lab/receive-stock"},
         {"Scan", "hero-qr-code", ~p"/lab/scan"}
