@@ -1,6 +1,7 @@
 defmodule ThamaniDawaWeb.LabReceiveStockLive do
   use ThamaniDawaWeb, :live_view
 
+  alias ThamaniDawa.Accounts.Scope
   alias ThamaniDawa.Batches
   alias ThamaniDawa.Batches.Batch
   alias ThamaniDawa.GS1Decoder
@@ -78,24 +79,10 @@ defmodule ThamaniDawaWeb.LabReceiveStockLive do
     scope = socket.assigns.current_scope
     batch = Batches.get_batch!(scope.organization_id, String.to_integer(id))
 
-    case Batches.receive_batch(batch, scope.user.id) do
-      {:ok, _received} ->
-        usable_batches =
-          if socket.assigns.site_id do
-            Batches.list_active_batches_for_site(scope.organization_id, socket.assigns.site_id)
-          else
-            []
-          end
-
-        {:noreply,
-         socket
-         |> put_flash(:info, "Batch received and marked active.")
-         |> assign(:selected_batch, nil)
-         |> reload_pending_batches(scope)
-         |> assign(:usable_batches, usable_batches)}
-
-      {:error, _changeset} ->
-        {:noreply, put_flash(socket, :error, "Could not receive batch.")}
+    if not Scope.admin?(scope) and scope.user.site_id != batch.site_id do
+      {:noreply, put_flash(socket, :error, "Not authorized to receive this batch.")}
+    else
+      do_receive_batch(socket, scope, batch)
     end
   end
 
@@ -175,6 +162,28 @@ defmodule ThamaniDawaWeb.LabReceiveStockLive do
 
       {:error, reason} ->
         {:noreply, put_flash(socket, :error, "Couldn't record usage: #{inspect(reason)}")}
+    end
+  end
+
+  defp do_receive_batch(socket, scope, batch) do
+    case Batches.receive_batch(batch, scope.user.id) do
+      {:ok, _received} ->
+        usable_batches =
+          if socket.assigns.site_id do
+            Batches.list_active_batches_for_site(scope.organization_id, socket.assigns.site_id)
+          else
+            []
+          end
+
+        {:noreply,
+         socket
+         |> put_flash(:info, "Batch received and marked active.")
+         |> assign(:selected_batch, nil)
+         |> reload_pending_batches(scope)
+         |> assign(:usable_batches, usable_batches)}
+
+      {:error, _changeset} ->
+        {:noreply, put_flash(socket, :error, "Could not receive batch.")}
     end
   end
 
