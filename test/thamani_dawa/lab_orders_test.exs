@@ -42,6 +42,34 @@ defmodule ThamaniDawa.LabOrdersTest do
     end
   end
 
+  describe "create_lab_order_with_results/4 (with auto-created visit)" do
+    test "sets both patient_visit_id and patient_id on the resulting order" do
+      organization = organization_fixture()
+      site = site_fixture(%{organization_id: organization.id})
+      patient = patient_fixture(%{organization_id: organization.id})
+      lab_test = lab_test_fixture(%{organization_id: organization.id})
+      technician = staff_fixture(%{organization_id: organization.id, role: :lab_technician})
+
+      visit_attrs = %{
+        patient_id: patient.id,
+        site_id: site.id,
+        user_id: technician.id,
+        visit_type: :lab
+      }
+
+      assert {:ok, %{lab_order: header}} =
+               LabOrders.create_lab_order_with_results(
+                 organization.id,
+                 %{"site_id" => site.id},
+                 [%{lab_test_id: lab_test.id, sample_collection_description: 1}],
+                 visit_attrs
+               )
+
+      assert header.patient_id == patient.id
+      assert header.patient_visit_id != nil
+    end
+  end
+
   describe "create_lab_order_with_results/3" do
     test "creates the header and every result in one transaction" do
       organization = organization_fixture()

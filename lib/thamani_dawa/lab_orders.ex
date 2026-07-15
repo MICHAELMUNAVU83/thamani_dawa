@@ -63,7 +63,12 @@ defmodule ThamaniDawa.LabOrders do
     Repo.transaction(fn ->
       with {:ok, visit} <- PatientVisits.create_patient_visit(organization_id, visit_attrs),
            {:ok, lab_order} <-
-             create_lab_order(organization_id, Map.put(attrs, "patient_visit_id", visit.id)),
+             create_lab_order(
+               organization_id,
+               attrs
+               |> Map.put("patient_visit_id", visit.id)
+               |> Map.put("patient_id", visit.patient_id)
+             ),
            {:ok, results} <-
              create_lab_order_results(organization_id, lab_order.id, results_attrs) do
         %{lab_order: lab_order, lab_order_results: results}
