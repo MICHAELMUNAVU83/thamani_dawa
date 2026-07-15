@@ -201,15 +201,12 @@ defmodule ThamaniDawa.Prescriptions do
   ## Dispensing (§9 "Walk-in prescription → dispense", steps 2-3)
 
   @doc """
-  Dispenses `quantity` of a `prescription_items` row: FEFO-picks a batch at
-  the prescription's own site, decrements its `remaining_quantity`, then
-  rolls `prescription_items`/`prescriptions` status forward. All in one
-  transaction, so stock and dispensing state never drift apart.
+  Dispenses `quantity` for a prescription item by decrementing stock from eligible
+  batches in FEFO order at the prescription's site. Updates the status of the item
+  and prescription. Operates within a transaction to guarantee data integrity.
 
-  Returns `{:error, :out_of_stock}` when no eligible batch exists at that
-  site, `{:error, :over_dispensed}` when `quantity` would exceed what's left
-  to dispense on the item, or `{:error, changeset}` for any other
-  validation failure.
+  Returns `{:error, :out_of_stock}` if stock is insufficient, `{:error, :over_dispensed}` 
+  if `quantity` exceeds the prescribed amount, or `{:error, changeset}` for validation failures.
   """
   def dispense_item(organization_id, prescription_item_id, _pharmacist_id, quantity)
       when is_integer(organization_id) and is_integer(quantity) and quantity > 0 do
@@ -219,9 +216,9 @@ defmodule ThamaniDawa.Prescriptions do
       site_id = prescription_site_id(prescription)
 
       with :ok <- validate_not_over_dispensed(item, quantity),
-           {:ok, batch} <-
-             Batches.fefo_batch(organization_id, site_id, item.product_id),
-           {:ok, _batch} <- Batches.decrement_remaining_quantity(batch, quantity),
+           :ok <- validate_site_id_present(site_id),
+           batches = Batches.fefo_batches(organization_id, site_id, item.product_id),
+           :ok <- consume_quantity_across_batches(batches, quantity),
            {:ok, updated_item} <- bump_quantity_dispensed(item, quantity),
            {:ok, _prescription} <- recompute_status(prescription) do
         updated_item
@@ -231,6 +228,29 @@ defmodule ThamaniDawa.Prescriptions do
     end)
   end
 
+  defp consume_quantity_across_batches(_batches, 0), do: :ok
+
+  defp consume_quantity_across_batches([], quantity_needed) when quantity_needed > 0 do
+    {:error, :out_of_stock}
+  end
+
+  defp consume_quantity_across_batches([%{remaining_quantity: rq} | rest], quantity_needed)
+       when rq <= 0 do
+    consume_quantity_across_batches(rest, quantity_needed)
+  end
+
+  defp consume_quantity_across_batches([batch | rest], quantity_needed) do
+    to_consume = min(batch.remaining_quantity, quantity_needed)
+
+    case Batches.decrement_remaining_quantity(batch, to_consume) do
+      {:ok, _updated_batch} ->
+        consume_quantity_across_batches(rest, quantity_needed - to_consume)
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
   # `prescriptions` no longer carries its own `site_id` — it's derived from
   # the `patient_visits` row it's tied to via `patient_visit_id`.
   defp prescription_site_id(%Prescription{patient_visit_id: nil}), do: nil
@@ -238,6 +258,9 @@ defmodule ThamaniDawa.Prescriptions do
   defp prescription_site_id(%Prescription{patient_visit_id: patient_visit_id}) do
     Repo.get!(PatientVisit, patient_visit_id).site_id
   end
+
+  defp validate_site_id_present(nil), do: {:error, :invalid_prescription_site}
+  defp validate_site_id_present(_site_id), do: :ok
 
   defp validate_not_over_dispensed(%PrescriptionItem{} = item, quantity) do
     if item.quantity_dispensed + quantity > item.quantity_prescribed do
