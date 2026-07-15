@@ -216,6 +216,7 @@ defmodule ThamaniDawa.Prescriptions do
       site_id = prescription_site_id(prescription)
 
       with :ok <- validate_not_over_dispensed(item, quantity),
+           :ok <- validate_site_id_present(site_id),
            batches = Batches.fefo_batches(organization_id, site_id, item.product_id),
            :ok <- consume_quantity_across_batches(batches, quantity),
            {:ok, updated_item} <- bump_quantity_dispensed(item, quantity),
@@ -252,6 +253,9 @@ defmodule ThamaniDawa.Prescriptions do
   defp prescription_site_id(%Prescription{patient_visit_id: patient_visit_id}) do
     Repo.get!(PatientVisit, patient_visit_id).site_id
   end
+
+  defp validate_site_id_present(nil), do: {:error, :invalid_prescription_site}
+  defp validate_site_id_present(_site_id), do: :ok
 
   defp validate_not_over_dispensed(%PrescriptionItem{} = item, quantity) do
     if item.quantity_dispensed + quantity > item.quantity_prescribed do
