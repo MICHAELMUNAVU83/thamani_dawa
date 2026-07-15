@@ -48,16 +48,16 @@ defmodule ThamaniDawa.Batches do
   end
 
   @doc """
-  Finds an approved batch by GTIN and batch/lot number within an organization
-  for the pharmacy scan-lookup workflow. Pass `site_id:` to narrow the search to one site.
+  Finds approved batches by GTIN. 
+  It filters by the provided `site_id`, but will also check if the GTIN is approved at 
+  any *other* site within the organization to trigger the "Not at your site" transfer warning.
   """
-  def find_approved_batch_for_scan(organization_id, gtin, batch_no, opts \\ [])
+  def find_approved_batches_by_gtin(organization_id, gtin, opts \\ [])
       when is_integer(organization_id) do
     query =
       from b in Batch,
         where: b.organization_id == ^organization_id,
         where: b.gtin == ^gtin,
-        where: b.batch_no == ^batch_no,
         where: not is_nil(b.approver_id)
 
     site_id = Keyword.get(opts, :site_id)
@@ -69,16 +69,16 @@ defmodule ThamaniDawa.Batches do
         query
       end
 
-    case Repo.one(site_query) do
-      nil ->
+    case Repo.all(site_query) do
+      [] ->
         if site_id && Repo.exists?(query) do
           {:error, :not_at_site}
         else
           {:error, :not_found}
         end
 
-      batch ->
-        {:ok, batch}
+      batches ->
+        {:ok, batches}
     end
   end
 
