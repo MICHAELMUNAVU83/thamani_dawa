@@ -159,8 +159,13 @@ defmodule ThamaniDawaWeb.PrescriptionLive.Index do
     user_id = socket.assigns.current_scope.user.id
 
     if is_nil(patient_id) or patient_id == "" do
-      {:error,
-       Ecto.Changeset.add_error(Patient.changeset(%Patient{}, %{}), :id, "can't be blank")}
+      changeset =
+        %Prescription{}
+        |> Prescription.changeset(header_attrs)
+        |> Ecto.Changeset.add_error(:patient_id, "can't be blank")
+        |> Map.put(:action, :insert)
+
+      {:error, changeset}
     else
       Prescriptions.create_prescription_for_patient(
         organization_id,
@@ -299,7 +304,10 @@ defmodule ThamaniDawaWeb.PrescriptionLive.Index do
                           </.button>
                         <% end %>
                         <.button
-                          :if={length(Ecto.Changeset.get_field(@header_form.source, :items, [])) > 1}
+                          :if={
+                            is_list(@header_form[:items].value) and
+                              length(@header_form[:items].value) > 1
+                          }
                           type="button"
                           phx-click="remove-item"
                           phx-value-index={item_form.index}
@@ -406,7 +414,9 @@ defmodule ThamaniDawaWeb.PrescriptionLive.Index do
                   </div>
                 </.inputs_for>
                 <div
-                  :if={Enum.empty?(@header_form[:items].value || [])}
+                  :if={
+                    not is_list(@header_form[:items].value) or Enum.empty?(@header_form[:items].value)
+                  }
                   class="text-center text-base-content/50 py-4"
                 >
                   No items added. Click "+ Add Item" to prescribe medicine.
