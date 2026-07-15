@@ -234,6 +234,11 @@ defmodule ThamaniDawa.Prescriptions do
     {:error, :out_of_stock}
   end
 
+  defp consume_quantity_across_batches([%{remaining_quantity: rq} | rest], quantity_needed)
+       when rq <= 0 do
+    consume_quantity_across_batches(rest, quantity_needed)
+  end
+
   defp consume_quantity_across_batches([batch | rest], quantity_needed) do
     to_consume = min(batch.remaining_quantity, quantity_needed)
 
