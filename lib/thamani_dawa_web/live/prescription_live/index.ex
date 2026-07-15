@@ -23,10 +23,7 @@ defmodule ThamaniDawaWeb.PrescriptionLive.Index do
     site_id = SiteScoping.default_site_id(scope)
     initial_attrs = if site_id, do: %{site_id: site_id}, else: %{}
 
-    products =
-      organization_id
-      |> Products.list_products()
-      |> SiteScoping.for_current_site(scope)
+    products = Products.list_products(organization_id)
 
     socket
     |> assign(:patients, Patients.list_patients(organization_id))
@@ -71,7 +68,7 @@ defmodule ThamaniDawaWeb.PrescriptionLive.Index do
       {:noreply, put_flash(socket, :error, "Add at least one item to the prescription.")}
     else
       organization_id = socket.assigns.current_scope.organization_id
-      header_attrs = Map.put(header_attrs, "entered_by_id", socket.assigns.current_scope.user.id)
+      header_attrs = Map.put(header_attrs, "user_id", socket.assigns.current_scope.user.id)
 
       with {:ok, header_attrs} <- resolve_patient(socket, organization_id, header_attrs, params),
            {:ok, _result} <-
@@ -211,7 +208,7 @@ defmodule ThamaniDawaWeb.PrescriptionLive.Index do
       <.table
         id="prescriptions"
         rows={@prescriptions}
-        row_click={&~p"/pharmacy/prescriptions/#{&1.id}"}
+        row_click={fn p -> JS.navigate(~p"/pharmacy/prescriptions/#{p.id}") end}
       >
         <:col :let={prescription} label="Status">{Phoenix.Naming.humanize(prescription.status)}</:col>
         <:col :let={prescription} label="Total">{prescription.total_amount}</:col>

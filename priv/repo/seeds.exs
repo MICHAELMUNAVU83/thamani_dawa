@@ -187,7 +187,8 @@ paracetamol =
       category: "Analgesic",
       uom: "tablet",
       is_otc: true,
-      reorder_level: 50
+      reorder_level: 50,
+      price: 500
     },
     fn attrs -> Products.create_product(organization_id, attrs) end
   )
@@ -202,7 +203,8 @@ amoxicillin =
       product_type: :drug,
       category: "Antibiotic",
       uom: "capsule",
-      reorder_level: 40
+      reorder_level: 40,
+      price: 1200
     },
     fn attrs -> Products.create_product(organization_id, attrs) end
   )
@@ -218,7 +220,8 @@ morphine =
       category: "Controlled analgesic",
       uom: "ampoule",
       is_dangerous_drug: true,
-      reorder_level: 10
+      reorder_level: 10,
+      price: 3500
     },
     fn attrs -> Products.create_product(organization_id, attrs) end
   )
@@ -232,7 +235,8 @@ reagent =
       product_type: :lab_consumable,
       category: "Hematology",
       uom: "pack",
-      reorder_level: 5
+      reorder_level: 5,
+      price: 8000
     },
     fn attrs -> Products.create_product(organization_id, attrs) end
   )
@@ -245,7 +249,7 @@ batch = fn product, site, batch_no, quantity, unit_price ->
       site_id: site.id,
       gtin: product.gtin,
       manufacture_date: Date.add(today, -90),
-      expiry: Date.add(today, 540),
+      expiry_date: Date.add(today, 540),
       quantity: quantity,
       remaining_quantity: quantity,
       cost_per_unit: Decimal.new("20.00"),
@@ -258,11 +262,22 @@ batch = fn product, site, batch_no, quantity, unit_price ->
   )
 end
 
-paracetamol_batch = batch.(paracetamol, pharmacy_site, "PCM-2401", 240, "50.00")
-_amoxicillin_batch = batch.(amoxicillin, pharmacy_site, "AMX-2401", 120, "120.00")
-morphine_batch = batch.(morphine, pharmacy_site, "MOR-2401", 20, "450.00")
-reagent_batch = batch.(reagent, lab_site, "CBC-REAG-01", 25, "1500.00")
-_warehouse_batch = batch.(paracetamol, warehouse_site, "PCM-WH-01", 500, "45.00")
+receive_batch = fn product, site, batch_no, quantity, unit_price ->
+  b = batch.(product, site, batch_no, quantity, unit_price)
+
+  if is_nil(b.approver_id) do
+    {:ok, approved} = Batches.receive_batch(b, admin.id)
+    approved
+  else
+    b
+  end
+end
+
+paracetamol_batch = receive_batch.(paracetamol, pharmacy_site, "PCM-2401", 240, "50.00")
+_amoxicillin_batch = receive_batch.(amoxicillin, pharmacy_site, "AMX-2401", 120, "120.00")
+morphine_batch = receive_batch.(morphine, pharmacy_site, "MOR-2401", 20, "450.00")
+reagent_batch = receive_batch.(reagent, lab_site, "CBC-REAG-01", 25, "1500.00")
+_warehouse_batch = receive_batch.(paracetamol, warehouse_site, "PCM-WH-01", 500, "45.00")
 
 patient =
   insert_or_get.(
@@ -272,7 +287,8 @@ patient =
       full_name: "Jane Wanjiku",
       age: 34,
       gender: "female",
-      phone: "+254711000111"
+      phone: "+254711000111",
+      gsrn: 616_000_100_000_000_001
     },
     fn attrs -> Patients.create_patient(organization_id, attrs) end
   )
@@ -285,9 +301,21 @@ _second_patient =
       full_name: "Peter Mwangi",
       date_of_birth: ~D[1988-05-12],
       gender: "male",
-      phone: "+254722000222"
+      phone: "+254722000222",
+      gsrn: 616_000_100_000_000_002
     },
     fn attrs -> Patients.create_patient(organization_id, attrs) end
+  )
+
+pharmacy_patient_visit =
+  insert_or_get.(
+    PatientVisit,
+    %{organization_id: organization_id, patient_id: patient.id, site_id: pharmacy_site.id},
+    %{
+      user_id: pharmacist.id,
+      visit_type: :pharmacy
+    },
+    fn attrs -> PatientVisits.create_patient_visit(organization_id, attrs) end
   )
 
 prescription =
@@ -295,13 +323,10 @@ prescription =
     Prescription,
     %{
       organization_id: organization_id,
-      patient_id: patient.id,
-      prescriber_reg_no: "DOC-DEMO-01"
+      patient_visit_id: pharmacy_patient_visit.id
     },
     %{
-      site_id: pharmacy_site.id,
-      prescriber_name: "Dr. Demo",
-      entered_by_id: pharmacist.id,
+      user_id: pharmacist.id,
       payment_type: "cash",
       has_paid: true,
       total_amount: Decimal.new("250.00"),
@@ -403,7 +428,7 @@ lab_order_result =
 
 if lab_order_result.status == :pending do
   {:ok, lab_order_result} =
-    LabOrders.mark_sample_collected(organization_id, lab_order_result.id, today)
+    LabOrders.mark_sample_collected(organization_id, lab_order_result.id, lab_technician.id)
 
   {:ok, _lab_order_result} =
     LabOrders.record_result(organization_id, lab_order_result.id, lab_technician.id, %{

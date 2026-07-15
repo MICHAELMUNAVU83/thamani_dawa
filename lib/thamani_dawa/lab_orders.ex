@@ -88,11 +88,16 @@ defmodule ThamaniDawa.LabOrders do
     |> Repo.insert()
   end
 
-  @doc "Records the date a result's sample was physically collected."
-  def mark_sample_collected(organization_id, lab_order_result_id, date \\ Date.utc_today()) do
+  @doc "Records the date a result's sample was physically collected and who collected it."
+  def mark_sample_collected(
+        organization_id,
+        lab_order_result_id,
+        user_id,
+        date \\ Date.utc_today()
+      ) do
     organization_id
     |> get_lab_order_result!(lab_order_result_id)
-    |> Ecto.Changeset.change(sample_collected_on: date)
+    |> Ecto.Changeset.change(sample_collected_on: date, collected_by_id: user_id)
     |> Repo.update()
   end
 

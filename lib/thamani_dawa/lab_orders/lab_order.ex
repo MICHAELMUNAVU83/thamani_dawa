@@ -31,7 +31,6 @@ defmodule ThamaniDawa.LabOrders.LabOrder do
     lab_order
     |> cast(attrs, [
       :site_id,
-      :patient_id,
       :patient_visit_id,
       :prescriber_name,
       :ordered_by_id,
@@ -47,9 +46,8 @@ defmodule ThamaniDawa.LabOrders.LabOrder do
       :referring_doctor,
       :referred_date
     ])
-    |> validate_required([:site_id, :patient_id, :patient_visit_id])
+    |> validate_required([:site_id, :patient_visit_id])
     |> foreign_key_constraint(:site_id)
-    |> foreign_key_constraint(:patient_id)
     |> foreign_key_constraint(:patient_visit_id)
     |> foreign_key_constraint(:ordered_by_id)
   end

@@ -5,6 +5,7 @@ defmodule ThamaniDawaWeb.LabOrderLive.Show do
   alias ThamaniDawa.LabOrders
   alias ThamaniDawa.LabTests
   alias ThamaniDawa.Patients
+  alias ThamaniDawa.PatientVisits
 
   def mount(%{"id" => id}, _session, socket) do
     organization_id = socket.assigns.current_scope.organization_id
@@ -20,7 +21,8 @@ defmodule ThamaniDawaWeb.LabOrderLive.Show do
   defp load_lab_order(socket, id) do
     organization_id = socket.assigns.current_scope.organization_id
     lab_order = LabOrders.get_lab_order!(organization_id, id)
-    patient = Patients.get_patient!(organization_id, lab_order.patient_id)
+    visit = PatientVisits.get_patient_visit!(organization_id, lab_order.patient_visit_id)
+    patient = Patients.get_patient!(organization_id, visit.patient_id)
 
     results =
       organization_id
@@ -29,7 +31,7 @@ defmodule ThamaniDawaWeb.LabOrderLive.Show do
 
     user_ids =
       results
-      |> Enum.map(& &1.performed_by_id)
+      |> Enum.flat_map(&[&1.performed_by_id, &1.collected_by_id])
       |> Enum.filter(& &1)
       |> Enum.uniq()
 
@@ -44,7 +46,8 @@ defmodule ThamaniDawaWeb.LabOrderLive.Show do
 
   def handle_event("mark_collected", %{"id" => id}, socket) do
     organization_id = socket.assigns.current_scope.organization_id
-    LabOrders.mark_sample_collected(organization_id, String.to_integer(id))
+    user_id = socket.assigns.current_scope.user.id
+    LabOrders.mark_sample_collected(organization_id, String.to_integer(id), user_id)
     {:noreply, load_lab_order(socket, socket.assigns.lab_order.id)}
   end
 
@@ -94,6 +97,9 @@ defmodule ThamaniDawaWeb.LabOrderLive.Show do
         <:col :let={result} label="Test">{test_name(@lab_tests, result.lab_test_id)}</:col>
         <:col :let={result} label="Status">{Phoenix.Naming.humanize(result.status)}</:col>
         <:col :let={result} label="Sample collected">{result.sample_collected_on}</:col>
+        <:col :let={result} label="Collected by">
+          {user_name(@users_by_id, result.collected_by_id)}
+        </:col>
         <:col :let={result} label="Performed by">
           {user_name(@users_by_id, result.performed_by_id)}
         </:col>

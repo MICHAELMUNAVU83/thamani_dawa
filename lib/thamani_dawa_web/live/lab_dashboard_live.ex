@@ -34,7 +34,11 @@ defmodule ThamaniDawaWeb.LabDashboardLive do
       <.header>Lab dashboard</.header>
 
       <.header class="mt-4">Pending orders</.header>
-      <.table id="pending-orders" rows={@pending} row_click={&~p"/lab/orders/#{&1.id}"}>
+      <.table
+        id="pending-orders"
+        rows={@pending}
+        row_click={fn o -> JS.navigate(~p"/lab/orders/#{o.id}") end}
+      >
         <:col :let={lab_order} label="Patient">
           {patient_name(@patients_by_id, lab_order.patient_id)}
         </:col>
@@ -43,7 +47,11 @@ defmodule ThamaniDawaWeb.LabDashboardLive do
       </.table>
 
       <.header class="mt-6">Incomplete reports</.header>
-      <.table id="incomplete-orders" rows={@incomplete} row_click={&~p"/lab/orders/#{&1.id}"}>
+      <.table
+        id="incomplete-orders"
+        rows={@incomplete}
+        row_click={fn o -> JS.navigate(~p"/lab/orders/#{o.id}") end}
+      >
         <:col :let={lab_order} label="Patient">
           {patient_name(@patients_by_id, lab_order.patient_id)}
         </:col>

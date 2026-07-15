@@ -21,16 +21,17 @@ defmodule ThamaniDawa.LabOrdersTest do
   }
 
   describe "create_lab_order/2" do
-    test "requires site_id, patient_id, and patient_visit_id" do
+    test "requires site_id and patient_visit_id" do
       organization = organization_fixture()
 
       assert {:error, changeset} = LabOrders.create_lab_order(organization.id, %{})
 
       assert %{
                site_id: ["can't be blank"],
-               patient_id: ["can't be blank"],
                patient_visit_id: ["can't be blank"]
              } = errors_on(changeset)
+
+      refute Map.has_key?(errors_on(changeset), :patient_id)
     end
 
     test "defaults status to pending and scopes to the organization" do
