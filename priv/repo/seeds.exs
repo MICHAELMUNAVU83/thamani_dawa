@@ -288,7 +288,12 @@ batch = fn product, site, batch_no, quantity, unit_price ->
       received_at: now,
       approver_id: pharmacist.id
     },
-    fn attrs -> Batches.create_batch(organization_id, attrs) end
+    fn attrs ->
+      with {:ok, b} <- Batches.create_batch(organization_id, attrs),
+           {:ok, received} <- Batches.receive_batch(b, pharmacist.id) do
+        {:ok, received}
+      end
+    end
   )
 end
 
