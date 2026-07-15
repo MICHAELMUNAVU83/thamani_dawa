@@ -237,7 +237,7 @@ defmodule ThamaniDawaWeb.PrescriptionLiveTest do
       site = site_fixture(%{organization_id: organization.id})
       patient = patient_fixture(%{organization_id: organization.id})
       pharmacist = pharmacist_at_site(organization, site)
-      product = product_fixture(%{organization_id: organization.id})
+      product = product_fixture(%{organization_id: organization.id, gtin: "12345678901231"})
 
       patient_visit =
         patient_visit_fixture(%{
@@ -349,6 +349,73 @@ defmodule ThamaniDawaWeb.PrescriptionLiveTest do
              |> render_submit()
 
       assert render(show_live) =~ "That would dispense more than was prescribed."
+    end
+
+    test "verifies item when scanned GTIN matches the product", %{
+      conn: conn,
+      organization: org,
+      site: site,
+      product: product,
+      prescription: prescription,
+      item: item
+    } do
+      batch_fixture(%{
+        organization_id: org.id,
+        site_id: site.id,
+        product_id: product.id,
+        quantity: 50,
+        remaining_quantity: 50
+      })
+
+      # First dispense the item
+      {:ok, show_live, _html} = live(conn, ~p"/pharmacy/prescriptions/#{prescription.id}")
+
+      assert show_live
+             |> form("form", %{"item_id" => item.id, "quantity" => "4"})
+             |> render_submit()
+
+      # Now verify it
+      assert show_live
+             |> form("form[phx-submit='verify_item']", %{
+               "item_id" => item.id,
+               "gtin" => product.gtin
+             })
+             |> render_submit()
+
+      assert render(show_live) =~ "Item verified successfully."
+      assert render(show_live) =~ "Verified"
+    end
+
+    test "fails to verify when scanned GTIN does not match", %{
+      conn: conn,
+      organization: org,
+      site: site,
+      product: product,
+      prescription: prescription,
+      item: item
+    } do
+      batch_fixture(%{
+        organization_id: org.id,
+        site_id: site.id,
+        product_id: product.id,
+        quantity: 50,
+        remaining_quantity: 50
+      })
+
+      {:ok, show_live, _html} = live(conn, ~p"/pharmacy/prescriptions/#{prescription.id}")
+
+      assert show_live
+             |> form("form", %{"item_id" => item.id, "quantity" => "4"})
+             |> render_submit()
+
+      assert show_live
+             |> form("form[phx-submit='verify_item']", %{
+               "item_id" => item.id,
+               "gtin" => "12345678901248"
+             })
+             |> render_submit()
+
+      assert render(show_live) =~ "GTIN mismatch. This is the wrong product."
     end
   end
 end
