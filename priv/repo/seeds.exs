@@ -289,9 +289,8 @@ batch = fn product, site, batch_no, quantity, unit_price ->
       approver_id: pharmacist.id
     },
     fn attrs ->
-      with {:ok, b} <- Batches.create_batch(organization_id, attrs),
-           {:ok, received} <- Batches.receive_batch(b, pharmacist.id) do
-        {:ok, received}
+      with {:ok, b} <- Batches.create_batch(organization_id, attrs) do
+        Batches.receive_batch(b, pharmacist.id)
       end
     end
   )
