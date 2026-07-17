@@ -181,6 +181,53 @@ defmodule ThamaniDawa.LabOrdersTest do
       assert %LabOrder{status: :in_progress} =
                LabOrders.get_lab_order!(ctx.organization.id, lab_order.id)
     end
+
+    test "moves a multi-test order to in_progress while sibling results are still pending", ctx do
+      lab_order = lab_order_fixture(%{organization_id: ctx.organization.id})
+
+      result_1 =
+        lab_order_result_fixture(%{
+          organization_id: ctx.organization.id,
+          lab_order_id: lab_order.id
+        })
+
+      result_2 =
+        lab_order_result_fixture(%{
+          organization_id: ctx.organization.id,
+          lab_order_id: lab_order.id
+        })
+
+      assert {:ok, _} =
+               LabOrders.mark_sample_collected(
+                 ctx.organization.id,
+                 result_1.id,
+                 ctx.technician.id
+               )
+
+      assert %LabOrder{status: :in_progress} =
+               LabOrders.get_lab_order!(ctx.organization.id, lab_order.id)
+
+      assert LabOrders.get_lab_order_result!(ctx.organization.id, result_2.id).status == :pending
+    end
+
+    test "never resurrects a cancelled order", ctx do
+      lab_order =
+        lab_order_fixture(%{organization_id: ctx.organization.id, status: :cancelled})
+
+      result =
+        lab_order_result_fixture(%{
+          organization_id: ctx.organization.id,
+          lab_order_id: lab_order.id
+        })
+
+      assert {:ok, updated} =
+               LabOrders.mark_sample_collected(ctx.organization.id, result.id, ctx.technician.id)
+
+      assert updated.status == :collected
+
+      assert %LabOrder{status: :cancelled} =
+               LabOrders.get_lab_order!(ctx.organization.id, lab_order.id)
+    end
   end
 
   describe "record_result/4" do
@@ -262,6 +309,27 @@ defmodule ThamaniDawa.LabOrdersTest do
       assert %LabOrder{status: :completed} =
                LabOrders.get_lab_order!(ctx.organization.id, lab_order.id)
     end
+
+    test "never resurrects a cancelled order", ctx do
+      lab_order =
+        lab_order_fixture(%{organization_id: ctx.organization.id, status: :cancelled})
+
+      result =
+        lab_order_result_fixture(%{
+          organization_id: ctx.organization.id,
+          lab_order_id: lab_order.id
+        })
+
+      assert {:ok, updated} =
+               LabOrders.record_result(ctx.organization.id, result.id, ctx.technician.id, %{
+                 "note" => "ok"
+               })
+
+      assert updated.status == :completed
+
+      assert %LabOrder{status: :cancelled} =
+               LabOrders.get_lab_order!(ctx.organization.id, lab_order.id)
+    end
   end
 
   describe "verify_result/3" do
@@ -329,6 +397,30 @@ defmodule ThamaniDawa.LabOrdersTest do
                LabOrders.verify_result(organization.id, completed_1.id, ctx.verifier.id)
 
       assert LabOrders.get_lab_order!(organization.id, lab_order.id).status == :completed
+    end
+
+    test "never resurrects a cancelled order", ctx do
+      lab_order =
+        lab_order_fixture(%{organization_id: ctx.organization.id, status: :cancelled})
+
+      result =
+        lab_order_result_fixture(%{
+          organization_id: ctx.organization.id,
+          lab_order_id: lab_order.id
+        })
+
+      {:ok, completed} =
+        LabOrders.record_result(ctx.organization.id, result.id, ctx.performer.id, %{
+          "note" => "ok"
+        })
+
+      assert {:ok, verified} =
+               LabOrders.verify_result(ctx.organization.id, completed.id, ctx.verifier.id)
+
+      assert verified.status == :verified
+
+      assert %LabOrder{status: :cancelled} =
+               LabOrders.get_lab_order!(ctx.organization.id, lab_order.id)
     end
   end
 

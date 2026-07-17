@@ -233,34 +233,48 @@ defmodule ThamaniDawa.LabOrders do
     |> Repo.update()
   end
 
-  # A lab order is `completed` once every result has results, `in_progress`
-  # once at least one result has been completed, and left alone otherwise
-  # (e.g. `cancelled`).
+  # Rolls the parent order status up from its child results: `verified` once
+  # every result is verified, `completed` once every result is at least
+  # completed, `in_progress` once any result has moved past pending, and
+  # left alone otherwise. A `cancelled` order is never resurrected, no
+  # matter what happens to its results. The order row is locked FOR UPDATE
+  # so concurrent recomputes (e.g. two results verified at the same moment)
+  # serialize instead of both reading a stale snapshot of their siblings.
   defp recompute_lab_order_status(organization_id, lab_order_id) do
-    lab_order = get_lab_order!(organization_id, lab_order_id)
-    results = Repo.all(from r in LabOrderResult, where: r.lab_order_id == ^lab_order_id)
+    lab_order =
+      Repo.one!(
+        from o in LabOrder,
+          where: o.id == ^lab_order_id and o.organization_id == ^organization_id,
+          lock: "FOR UPDATE"
+      )
 
-    status =
-      cond do
-        results == [] ->
-          lab_order.status
+    if lab_order.status == :cancelled do
+      {:ok, lab_order}
+    else
+      results = Repo.all(from r in LabOrderResult, where: r.lab_order_id == ^lab_order_id)
 
-        Enum.all?(results, &(&1.status == :verified)) ->
-          :verified
+      status =
+        cond do
+          results == [] ->
+            lab_order.status
 
-        Enum.all?(results, &(&1.status in [:completed, :verified])) ->
-          :completed
+          Enum.all?(results, &(&1.status == :verified)) ->
+            :verified
 
-        Enum.any?(results, &(&1.status in [:completed, :collected, :verified])) ->
-          :in_progress
+          Enum.all?(results, &(&1.status in [:completed, :verified])) ->
+            :completed
 
-        true ->
-          lab_order.status
-      end
+          Enum.any?(results, &(&1.status in [:completed, :collected, :verified])) ->
+            :in_progress
 
-    lab_order
-    |> Ecto.Changeset.change(status: status)
-    |> Repo.update()
+          true ->
+            lab_order.status
+        end
+
+      lab_order
+      |> Ecto.Changeset.change(status: status)
+      |> Repo.update()
+    end
   end
 
   ## Consumable usage (§9 "Lab order → verified result", step 4)
