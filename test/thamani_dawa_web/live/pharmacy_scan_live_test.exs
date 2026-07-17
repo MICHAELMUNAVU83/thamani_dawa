@@ -303,8 +303,17 @@ defmodule ThamaniDawaWeb.PharmacyScanLiveTest do
       pharmacist = pharmacist_at(organization, site)
       gtin = unique_gtin()
 
+      # Nameless products can no longer be created through the context
+      # (`Products.create_product/2` requires a generic or brand name), but
+      # legacy rows may predate that validation — insert directly to
+      # simulate one.
       product =
-        product_fixture(%{organization_id: organization.id, generic_name: nil, gtin: gtin})
+        ThamaniDawa.Repo.insert!(%ThamaniDawa.Products.Product{
+          organization_id: organization.id,
+          gtin: gtin,
+          uom: "tablet",
+          price: 100
+        })
 
       batch_fixture(%{
         organization_id: organization.id,
