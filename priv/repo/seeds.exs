@@ -239,7 +239,7 @@ reagent =
     %{organization_id: organization_id, gtin: reagent_gtin},
     %{
       site_id: lab_site.id,
-      name: "CBC Reagent Pack",
+      generic_name: "CBC Reagent Pack",
       product_type: :lab_consumable,
       category: "Hematology",
       uom: "pack",
@@ -325,7 +325,7 @@ _warehouse_batch = batch.(paracetamol, warehouse_site, "PCM-WH-01", 500, "45.00"
 patient =
   insert_or_get.(
     Patient,
-    %{organization_id: organization_id, national_id: "DEMO-001"},
+    %{organization_id: organization_id, national_id: "10000001"},
     %{
       full_name: "Jane Wanjiku",
       age: 34,
@@ -339,7 +339,7 @@ patient =
 _second_patient =
   insert_or_get.(
     Patient,
-    %{organization_id: organization_id, national_id: "DEMO-002"},
+    %{organization_id: organization_id, national_id: "10000002"},
     %{
       full_name: "Peter Mwangi",
       date_of_birth: ~D[1988-05-12],
