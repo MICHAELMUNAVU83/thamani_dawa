@@ -208,15 +208,18 @@ defmodule ThamaniDawaWeb.LabOrderLive.Index do
             <p class="text-sm font-medium" style="color: #373896;">New patient</p>
             <.input field={@patient_form[:full_name]} label="Full name" required />
             <.input field={@patient_form[:gsrn]} type="number" label="GSRN" required />
+            <.input
+              field={@patient_form[:date_of_birth]}
+              type="date"
+              label="Date of birth"
+              required
+              max={Date.utc_today()}
+            />
             <div class="grid grid-cols-2 gap-3">
-              <.input field={@patient_form[:date_of_birth]} type="date" label="Date of birth" />
-              <.input field={@patient_form[:age]} type="number" label="Age" />
+              <.input field={@patient_form[:gender]} label="Gender" required />
+              <.input field={@patient_form[:phone]} label="Phone" required />
             </div>
-            <div class="grid grid-cols-2 gap-3">
-              <.input field={@patient_form[:gender]} label="Gender" />
-              <.input field={@patient_form[:phone]} label="Phone" />
-            </div>
-            <.input field={@patient_form[:national_id]} label="National ID" />
+            <.input field={@patient_form[:national_id]} label="National ID" required />
           </div>
 
           <.input :if={@site_locked} field={@header_form[:site_id]} type="hidden" />
