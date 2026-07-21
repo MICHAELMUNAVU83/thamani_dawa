@@ -210,7 +210,11 @@ defmodule ThamaniDawaWeb.Layouts do
             id="sidebar-brand-text"
             class="flex flex-col overflow-hidden whitespace-nowrap transition-opacity duration-150"
           >
-            <a href={~p"/"} class="font-bold text-[17px] leading-tight" style="color: var(--thamani-forest);">
+            <a
+              href={~p"/"}
+              class="font-bold text-[17px] leading-tight"
+              style="color: var(--thamani-forest);"
+            >
               {@title}
             </a>
             <span class="text-[13px] font-medium" style="color: var(--thamani-pewter);">

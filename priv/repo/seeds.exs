@@ -328,7 +328,7 @@ patient =
     %{organization_id: organization_id, national_id: "10000001"},
     %{
       full_name: "Jane Wanjiku",
-      age: 34,
+      date_of_birth: Patient.approximate_date_of_birth_from_age(34),
       gender: "female",
       phone: "+254711000111",
       gsrn: 616_000_100_000_000_001

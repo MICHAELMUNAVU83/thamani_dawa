@@ -141,7 +141,10 @@ defmodule ThamaniDawaWeb.LabOrderLiveTest do
         },
         "patient" => %{
           "full_name" => "Inline Patient",
-          "age" => "28",
+          "date_of_birth" => "1996-01-01",
+          "gender" => "Female",
+          "phone" => "0712345678",
+          "national_id" => "12345678",
           "gsrn" => to_string(gsrn)
         },
         "tests" => %{
