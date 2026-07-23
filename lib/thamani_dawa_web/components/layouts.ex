@@ -187,15 +187,22 @@ defmodule ThamaniDawaWeb.Layouts do
     ~H"""
     <div
       id="sidebar-shell"
-      class="internal-app h-screen flex overflow-hidden"
+      class="internal-app flex min-h-screen overflow-x-hidden lg:h-screen lg:overflow-hidden"
       style="background: var(--thamani-canvas); font-family: var(--font-thamani-sans, sans-serif);"
       phx-hook=".Sidebar"
     >
+      <button
+        id="sidebar-backdrop"
+        type="button"
+        aria-label="Close navigation"
+        class="fixed inset-0 z-40 hidden bg-slate-950/35 backdrop-blur-[1px] lg:hidden"
+      />
       <%!-- Sidebar --%>
       <aside
         id="sidebar-aside"
-        class="relative shrink-0 flex flex-col transition-[width] duration-200 ease-in-out border-r"
+        class="fixed inset-y-0 left-0 z-50 flex w-72 -translate-x-full shrink-0 flex-col border-r transition-[transform,width] duration-200 ease-in-out lg:relative lg:z-auto lg:translate-x-0"
         style="background: var(--thamani-snow); border-color: var(--thamani-border-nav); width: 288px; padding: 24px 20px;"
+        aria-label={"#{@section_label} navigation"}
       >
         <%!-- Toggle — fixed position in both states (never moves, never stacks
              under the logo), so nothing below it shifts when collapsing. --%>
@@ -246,6 +253,7 @@ defmodule ThamaniDawaWeb.Layouts do
             <.link
               navigate={path}
               data-tooltip={label}
+              aria-current={active && "page"}
               class="flex items-center gap-3 rounded-xl text-[15px] font-medium transition-all whitespace-nowrap"
               style={
                 if active,
@@ -346,8 +354,28 @@ defmodule ThamaniDawaWeb.Layouts do
       </aside>
 
       <%!-- Main content --%>
-      <main class="flex-1 overflow-y-auto min-w-0 px-4 py-6 lg:px-8 lg:py-8">
-        <div class="mx-auto space-y-4" style="max-width: 1600px;">
+      <main class="min-w-0 flex-1 lg:overflow-y-auto">
+        <header
+          id="mobile-app-bar"
+          class="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-thamani-border-nav bg-thamani-snow/95 px-4 backdrop-blur lg:hidden"
+        >
+          <button
+            id="mobile-sidebar-toggle"
+            type="button"
+            aria-label="Open navigation"
+            aria-controls="sidebar-aside"
+            aria-expanded="false"
+            class="flex size-11 items-center justify-center rounded-lg text-thamani-forest transition-colors hover:bg-thamani-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-thamani-accent"
+          >
+            <.icon name="hero-bars-3" class="size-5" />
+          </button>
+          <div class="min-w-0 text-center">
+            <p class="truncate text-sm font-semibold text-thamani-forest">{@title}</p>
+            <p class="truncate text-xs text-thamani-pewter">{@section_label}</p>
+          </div>
+          <div class="size-11" aria-hidden="true" />
+        </header>
+        <div class="mx-auto space-y-5 px-4 py-5 sm:px-6 lg:px-8 lg:py-8" style="max-width: 1600px;">
           {render_slot(@inner_block)}
         </div>
       </main>
@@ -360,11 +388,18 @@ defmodule ThamaniDawaWeb.Layouts do
         mounted() {
           const sidebar = document.getElementById("sidebar-aside");
           const toggleBtn = document.getElementById("sidebar-toggle");
+          const mobileToggle = document.getElementById("mobile-sidebar-toggle");
+          const backdrop = document.getElementById("sidebar-backdrop");
           let collapsed = localStorage.getItem("sidebar-collapsed") === "true";
 
           const apply = () => {
             sidebar.classList.toggle("sidebar-collapsed", collapsed);
             localStorage.setItem("sidebar-collapsed", collapsed);
+          };
+
+          const closeMobile = () => {
+            this.el.classList.remove("sidebar-mobile-open");
+            mobileToggle?.setAttribute("aria-expanded", "false");
           };
 
           apply();
@@ -373,6 +408,14 @@ defmodule ThamaniDawaWeb.Layouts do
             collapsed = !collapsed;
             apply();
           });
+
+          mobileToggle?.addEventListener("click", () => {
+            const open = !this.el.classList.contains("sidebar-mobile-open");
+            this.el.classList.toggle("sidebar-mobile-open", open);
+            mobileToggle.setAttribute("aria-expanded", String(open));
+          });
+          backdrop?.addEventListener("click", closeMobile);
+          sidebar.querySelectorAll("a").forEach(link => link.addEventListener("click", closeMobile));
         }
       }
     </script>

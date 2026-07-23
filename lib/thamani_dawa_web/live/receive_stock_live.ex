@@ -30,10 +30,13 @@ defmodule ThamaniDawaWeb.ReceiveStockLive do
      |> assign(:products_by_id, products_by_id)
      |> assign(:sites_by_id, sites_by_id)
      |> assign(:gs1_decode_error, nil)
+     |> assign(:scan_form, to_form(%{"raw_gs1" => ""}))
      |> stream(:pending_batches, pending_batches)}
   end
 
   def handle_event("receive_via_gs1", %{"raw_gs1" => raw_gs1}, socket) do
+    socket = assign(socket, :scan_form, to_form(%{"raw_gs1" => raw_gs1}))
+
     case GS1Decoder.parse(raw_gs1) do
       {:ok, %{gtin: gtin, batch_no: batch_no}} when is_binary(gtin) and is_binary(batch_no) ->
         receive_matching_pending_batch(socket, gtin, batch_no)
@@ -136,53 +139,82 @@ defmodule ThamaniDawaWeb.ReceiveStockLive do
       current_scope={@current_scope}
       current_path="/pharmacy/receive-stock"
     >
-      <.header>
+      <.header icon="hero-arrow-down-tray">
         Receive stock
-        <:subtitle>Batches dispatched to your site, awaiting confirmation</:subtitle>
+        <:subtitle>
+          Confirm dispatched batches at your site by scanning or reviewing the delivery.
+        </:subtitle>
       </.header>
 
-      <div class="card bg-base-200 mb-4">
-        <div class="card-body">
-          <h2 class="font-semibold mb-2">Scan to receive</h2>
-          <form
-            id="receive-stock-gs1-form"
-            phx-submit="receive_via_gs1"
-            class="flex gap-2 items-end"
-          >
-            <div class="flex-1">
-              <.input
-                name="raw_gs1"
-                label="Raw GS1 element string"
-                placeholder="(01)0...(10)LOT1(17)261231"
-              />
-            </div>
-            <.button class="mb-2">Scan &amp; receive</.button>
-          </form>
-          <p :if={@gs1_decode_error} id="gs1-decode-error" class="mt-2 text-error">
-            {@gs1_decode_error}
-          </p>
+      <section
+        id="receive-stock-scan-panel"
+        class="mb-5 rounded-xl border border-thamani-stone bg-thamani-snow p-4 sm:p-5"
+      >
+        <div class="mb-4 flex items-start gap-3">
+          <div class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-thamani-lime text-thamani-forest">
+            <.icon name="hero-qr-code" class="size-5" />
+          </div>
+          <div>
+            <h2 class="text-base font-semibold text-thamani-forest">Scan to receive</h2>
+            <p class="mt-0.5 text-sm text-thamani-pewter">
+              Scan the full GS1 barcode to match and receive a pending batch immediately.
+            </p>
+          </div>
         </div>
-      </div>
+        <.form
+          for={@scan_form}
+          id="receive-stock-gs1-form"
+          phx-submit="receive_via_gs1"
+          class="flex flex-col gap-3 sm:flex-row sm:items-end"
+        >
+          <div class="flex-1">
+            <.input
+              field={@scan_form[:raw_gs1]}
+              label="GS1 barcode"
+              placeholder="(01)0...(10)LOT1(17)261231"
+              autocomplete="off"
+            />
+          </div>
+          <.button variant="primary" class="sm:mb-2" phx-disable-with="Receiving…">
+            Scan and receive
+          </.button>
+        </.form>
+        <p
+          :if={@gs1_decode_error}
+          id="gs1-decode-error"
+          role="alert"
+          class="mt-2 flex items-center gap-2 text-sm text-thamani-error"
+        >
+          <.icon name="hero-exclamation-circle" class="size-4 shrink-0" />
+          {@gs1_decode_error}
+        </p>
+      </section>
 
       <.table id="pending-batches" rows={@streams.pending_batches}>
         <:col :let={{_id, batch}} label="Product">
-          {product_name(@products_by_id, batch.product_id)}
+          <div class="font-medium text-thamani-forest">
+            {product_name(@products_by_id, batch.product_id)}
+          </div>
+          <div class="mt-0.5 font-mono text-xs text-thamani-subtle">{batch.gtin}</div>
         </:col>
         <:col :let={{_id, batch}} label="Site">{site_name(@sites_by_id, batch.site_id)}</:col>
-        <:col :let={{_id, batch}} label="GTIN">{batch.gtin}</:col>
         <:col :let={{_id, batch}} label="Batch / lot">{batch.batch_no}</:col>
         <:col :let={{_id, batch}} label="Expiry">{batch.expiry_date}</:col>
+        <:col :let={{_id, batch}} label="Expected">
+          <span class="tabular-nums">{batch.quantity}</span>
+        </:col>
         <:action :let={{_id, batch}}>
           <form id={"receive-batch-#{batch.id}"} phx-submit="receive" class="flex gap-2 items-center">
             <input type="hidden" name="batch_id" value={batch.id} />
             <input
+              aria-label={"Quantity received for #{product_name(@products_by_id, batch.product_id)}"}
               type="number"
               name="quantity"
               value={batch.quantity}
               min="0"
-              class="input input-sm w-24"
+              class="h-10 w-20 rounded-lg border border-thamani-stone bg-thamani-snow px-3 text-right text-sm tabular-nums outline-none focus:border-thamani-accent focus:ring-2 focus:ring-thamani-accent/15"
             />
-            <.button variant="primary" class="btn-sm" phx-disable-with="Receiving...">
+            <.button variant="primary" class="!px-4 !py-2" phx-disable-with="Receiving...">
               Receive
             </.button>
           </form>

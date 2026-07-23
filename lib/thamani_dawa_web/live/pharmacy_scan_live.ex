@@ -21,6 +21,7 @@ defmodule ThamaniDawaWeb.PharmacyScanLive do
       assign(socket,
         scan_state: :idle,
         decode_error: nil,
+        scan_form: to_form(%{"gtin" => params["gtin"] || ""}),
         gtin: nil,
         batches: [],
         product: nil,
@@ -50,6 +51,7 @@ defmodule ThamaniDawaWeb.PharmacyScanLive do
     if gtin != "" do
       socket =
         socket
+        |> assign(:scan_form, to_form(%{"gtin" => gtin}))
         |> assign(:decode_error, nil)
         |> lookup_approved_batches(organization_id, site_id, gtin)
 
@@ -59,6 +61,7 @@ defmodule ThamaniDawaWeb.PharmacyScanLive do
        assign(socket,
          scan_state: :idle,
          decode_error: "Please enter a valid GTIN.",
+         scan_form: to_form(%{"gtin" => gtin}),
          gtin: nil,
          batches: [],
          product: nil,
@@ -137,45 +140,53 @@ defmodule ThamaniDawaWeb.PharmacyScanLive do
       current_scope={@current_scope}
       current_path="/pharmacy/scan"
     >
-      <.header>
+      <.header icon="hero-qr-code">
         Scan lookup
-        <:subtitle>Decode a GS1 barcode to check approved stock and traceability details</:subtitle>
+        <:subtitle>Check approved stock, location, expiry, and traceability details.</:subtitle>
       </.header>
 
-      <div class="card bg-base-200 mb-6">
-        <div class="card-body">
-          <form
-            id="scan-form"
-            phx-submit="decode"
-            class="flex flex-col gap-3 sm:flex-row sm:items-end"
-          >
-            <div class="flex-1">
-              <.input
-                name="gtin"
-                label="GTIN / Barcode"
-                placeholder="00614141000012"
-                autocomplete="off"
-              />
-            </div>
-            <.button id="scan-submit" variant="primary" class="sm:mb-0.5">
-              <.icon name="hero-qr-code" class="size-4 mr-1" />Lookup
-            </.button>
-          </form>
-          <p :if={@decode_error} id="scan-decode-error" class="mt-2 text-error text-sm">
-            {@decode_error}
-          </p>
-        </div>
-      </div>
+      <section
+        id="scan-lookup-panel"
+        class="mb-5 rounded-xl border border-thamani-stone bg-thamani-snow p-4 sm:p-5"
+      >
+        <.form
+          for={@scan_form}
+          id="scan-form"
+          phx-submit="decode"
+          class="flex flex-col gap-3 sm:flex-row sm:items-end"
+        >
+          <div class="flex-1">
+            <.input
+              field={@scan_form[:gtin]}
+              label="GTIN or barcode"
+              placeholder="00614141000012"
+              autocomplete="off"
+            />
+          </div>
+          <.button id="scan-submit" variant="primary" class="sm:mb-0.5">
+            <.icon name="hero-magnifying-glass" class="mr-1 size-4" /> Look up stock
+          </.button>
+        </.form>
+        <p
+          :if={@decode_error}
+          id="scan-decode-error"
+          role="alert"
+          class="mt-2 flex items-center gap-2 text-sm text-thamani-error"
+        >
+          <.icon name="hero-exclamation-circle" class="size-4 shrink-0" />
+          {@decode_error}
+        </p>
+      </section>
 
       <%!-- Approved batch found at this site --%>
       <div :if={@scan_state == :found} id="scan-result-found">
-        <div class="rounded-2xl border border-emerald-200 bg-emerald-50 p-6 space-y-5">
+        <div class="space-y-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-5 sm:p-6">
           <div class="flex items-start justify-between gap-4">
             <div>
               <p class="text-xs font-semibold uppercase tracking-widest mb-1 text-emerald-700">
                 Approved stock found
               </p>
-              <h2 id="result-product-name" class="text-xl font-bold text-thamani-forest">
+              <h2 id="result-product-name" class="text-xl font-semibold text-thamani-forest">
                 {product_display_name(@product)}
               </h2>
               <p class="text-sm mt-0.5 text-emerald-700">
@@ -188,39 +199,41 @@ defmodule ThamaniDawaWeb.PharmacyScanLive do
             </span>
           </div>
 
-          <div class="grid grid-cols-2 gap-x-8 gap-y-3 sm:grid-cols-3">
+          <dl class="grid grid-cols-1 gap-x-8 gap-y-4 border-t border-emerald-200 pt-4 sm:grid-cols-3">
             <div>
-              <p class="text-xs text-base-content/50 uppercase tracking-wide">GTIN</p>
-              <p id="result-gtin" class="font-mono text-sm font-semibold">{@gtin}</p>
+              <dt class="text-xs font-medium text-emerald-800/70">GTIN</dt>
+              <dd id="result-gtin" class="mt-1 break-all font-mono text-sm font-medium">{@gtin}</dd>
             </div>
             <div>
-              <p class="text-xs text-base-content/50 uppercase tracking-wide">Batch / lot</p>
-              <p id="result-batch-no" class="text-sm font-semibold">
+              <dt class="text-xs font-medium text-emerald-800/70">Batch / lot</dt>
+              <dd id="result-batch-no" class="mt-1 text-sm font-medium">
                 {if @batch_count > 1, do: "#{@batch_count} batches", else: hd(@batches).batch_no}
-              </p>
+              </dd>
             </div>
             <div>
-              <p class="text-xs text-base-content/50 uppercase tracking-wide">Expiry date</p>
-              <p
+              <dt class="text-xs font-medium text-emerald-800/70">Earliest expiry</dt>
+              <dd
                 id="result-expiry"
                 class={[
-                  "text-sm font-semibold",
-                  Date.compare(@earliest_expiry, Date.utc_today()) == :lt && "text-error"
+                  "mt-1 text-sm font-medium tabular-nums",
+                  Date.compare(@earliest_expiry, Date.utc_today()) == :lt && "text-thamani-error"
                 ]}
               >
                 {Calendar.strftime(@earliest_expiry, "%d %b %Y")} {if @batch_count > 1,
                   do: "(Earliest)"}
-              </p>
+              </dd>
             </div>
             <div>
-              <p class="text-xs text-base-content/50 uppercase tracking-wide">Site</p>
-              <p id="result-site" class="text-sm font-semibold">{@site.name}</p>
+              <dt class="text-xs font-medium text-emerald-800/70">Site</dt>
+              <dd id="result-site" class="mt-1 text-sm font-medium">{@site.name}</dd>
             </div>
             <div>
-              <p class="text-xs text-base-content/50 uppercase tracking-wide">Remaining qty</p>
-              <p id="result-quantity" class="text-sm font-semibold">{@total_qty}</p>
+              <dt class="text-xs font-medium text-emerald-800/70">Remaining quantity</dt>
+              <dd id="result-quantity" class="mt-1 text-lg font-semibold tabular-nums">
+                {@total_qty}
+              </dd>
             </div>
-          </div>
+          </dl>
         </div>
       </div>
 
@@ -268,9 +281,9 @@ defmodule ThamaniDawaWeb.PharmacyScanLive do
 
       <%!-- Idle — nothing scanned yet --%>
       <div :if={@scan_state == :idle} id="scan-idle-hint">
-        <p class="text-sm text-base-content/50 text-center py-8">
-          Scan or paste a GTIN or barcode above to look up stock.
-        </p>
+        <.blank_state icon="hero-qr-code" title="Ready to scan">
+          Scan or paste a GTIN or barcode above to look up approved stock.
+        </.blank_state>
       </div>
     </Layouts.pharmacy_shell>
     """

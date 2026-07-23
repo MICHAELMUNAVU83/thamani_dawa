@@ -388,20 +388,47 @@ defmodule ThamaniDawaWeb.PrescriptionLive.Index do
       >
         <h2 class="font-semibold mb-2">New prescription</h2>
 
-        <form id="prescription-form" phx-change="validate" phx-submit="save" class="space-y-6">
-          <!-- Step 1: Patient Information -->
-          <div class="border rounded-box border-base-300 overflow-hidden">
-            <div class="bg-base-300/50 px-4 py-3 border-b border-base-300 flex justify-between items-center">
-              <h3 class="font-semibold text-lg">1. Patient Information</h3>
-              <div class="tabs tabs-boxed tabs-sm">
+        <.form
+          for={@header_form}
+          id="prescription-form"
+          phx-change="validate"
+          phx-submit="save"
+          class="space-y-5"
+        >
+          <%!-- Step 1: Patient information --%>
+          <section class="overflow-hidden rounded-xl border border-thamani-stone bg-thamani-snow">
+            <div class="flex flex-col gap-3 border-b border-thamani-stone bg-thamani-canvas px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+              <h3 class="text-base font-semibold text-thamani-forest">1. Patient</h3>
+              <div class="inline-flex rounded-lg border border-thamani-stone bg-thamani-snow p-1">
                 <a
-                  class={["tab", not @use_new_patient && "tab-active"]}
+                  id="existing-patient-mode"
+                  role="button"
+                  tabindex="0"
+                  class={[
+                    "rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                    if(not @use_new_patient,
+                      do: "bg-thamani-lime text-thamani-forest",
+                      else: "text-thamani-pewter hover:text-thamani-forest"
+                    )
+                  ]}
                   phx-click="toggle_patient_mode"
                 >Existing Patient</a>
-                <a class={["tab", @use_new_patient && "tab-active"]} phx-click="toggle_patient_mode">New Patient</a>
+                <a
+                  id="new-patient-mode"
+                  role="button"
+                  tabindex="0"
+                  class={[
+                    "rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                    if(@use_new_patient,
+                      do: "bg-thamani-lime text-thamani-forest",
+                      else: "text-thamani-pewter hover:text-thamani-forest"
+                    )
+                  ]}
+                  phx-click="toggle_patient_mode"
+                >New Patient</a>
               </div>
             </div>
-            <div class="p-4 bg-base-100">
+            <div class="p-4 sm:p-5">
               <div :if={not @use_new_patient}>
                 <.input
                   field={@header_form[:patient_id]}
@@ -434,18 +461,26 @@ defmodule ThamaniDawaWeb.PrescriptionLive.Index do
                 <.input field={@patient_form[:national_id]} label="National ID" />
               </div>
             </div>
-          </div>
+          </section>
 
-          <!-- Step 2: Prescription Items -->
-          <div class="border rounded-box border-base-300 overflow-hidden">
-            <div class="bg-base-300/50 px-4 py-3 border-b border-base-300 flex justify-between items-center">
-              <h3 class="font-semibold text-lg">2. Prescription Items</h3>
-              <.button type="button" phx-click="add-item" variant="ghost">+ Add Item</.button>
+          <%!-- Step 2: Prescription items --%>
+          <section class="overflow-hidden rounded-xl border border-thamani-stone bg-thamani-snow">
+            <div class="flex items-center justify-between gap-3 border-b border-thamani-stone bg-thamani-canvas px-4 py-3">
+              <h3 class="text-base font-semibold text-thamani-forest">2. Medication</h3>
+              <.button id="add-prescription-item" type="button" phx-click="add-item" variant="ghost">
+                + Add Item
+              </.button>
             </div>
-            <div class="p-4 bg-base-100 space-y-4">
+            <div class="space-y-4 p-4 sm:p-5">
               <.inputs_for :let={item_form} field={@header_form[:items]}>
                 <% is_editing = MapSet.member?(@editing_items, item_form.index) %>
-                <div class={"border rounded-lg p-4 #{if is_editing, do: "border-base-300 bg-base-50", else: "border-base-200 bg-base-100"}"}>
+                <div class={[
+                  "rounded-lg border p-4",
+                  if(is_editing,
+                    do: "border-thamani-accent/40 bg-thamani-canvas",
+                    else: "border-thamani-stone bg-thamani-snow"
+                  )
+                ]}>
                   <div class={"flex justify-between items-center #{if is_editing, do: "mb-4"}"}>
                     <h4 class="font-medium text-sm text-base-content/70">
                       Item {item_form.index + 1}
@@ -601,14 +636,14 @@ defmodule ThamaniDawaWeb.PrescriptionLive.Index do
                 <.icon name="hero-exclamation-circle" class="size-5" />{msg}
               </p>
             </div>
-          </div>
+          </section>
 
-          <!-- Step 3: Prescription Details -->
-          <div class="border rounded-box border-base-300 overflow-hidden">
-            <div class="bg-base-300/50 px-4 py-3 border-b border-base-300">
-              <h3 class="font-semibold text-lg">3. Prescription Details</h3>
+          <%!-- Step 3: Prescription details --%>
+          <section class="overflow-hidden rounded-xl border border-thamani-stone bg-thamani-snow">
+            <div class="border-b border-thamani-stone bg-thamani-canvas px-4 py-3">
+              <h3 class="text-base font-semibold text-thamani-forest">3. Details and payment</h3>
             </div>
-            <div class="p-4 bg-base-100 space-y-4">
+            <div class="space-y-4 p-4 sm:p-5">
               <.input
                 :if={@site_locked}
                 field={@header_form[:site_id]}
@@ -648,13 +683,15 @@ defmodule ThamaniDawaWeb.PrescriptionLive.Index do
 
               <.input field={@header_form[:notes]} type="textarea" label="Additional Notes" />
             </div>
-          </div>
+          </section>
 
-          <div class="flex gap-2 justify-end">
+          <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             <.button type="button" patch={~p"/pharmacy/prescriptions"} variant="ghost">Cancel</.button>
-            <.button type="submit" variant="primary">Create Prescription</.button>
+            <.button type="submit" variant="primary" phx-disable-with="Creating prescription…">
+              Create Prescription
+            </.button>
           </div>
-        </form>
+        </.form>
       </.modal>
 
       <.table

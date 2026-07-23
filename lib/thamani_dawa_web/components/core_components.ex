@@ -751,12 +751,12 @@ defmodule ThamaniDawaWeb.CoreComponents do
 
   def header(assigns) do
     ~H"""
-    <div class={["rounded-2xl border border-thamani-stone bg-thamani-snow shadow-sm mb-4", @class]}>
+    <div class={["mb-5 rounded-2xl border border-thamani-stone bg-thamani-snow shadow-sm", @class]}>
       <header class={[
-        "flex items-center justify-between gap-6 p-5",
+        "flex flex-col items-stretch gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:p-5",
         @toolbar != [] && "border-b border-thamani-stone"
       ]}>
-        <div class="flex items-center gap-3">
+        <div class="flex min-w-0 items-center gap-3">
           <div
             :if={@icon}
             class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-thamani-lime text-thamani-forest"
@@ -764,17 +764,25 @@ defmodule ThamaniDawaWeb.CoreComponents do
             <.icon name={@icon} class="size-5" />
           </div>
           <div>
-            <h1 class="text-lg font-semibold leading-8 text-thamani-forest">
+            <h1 class="text-xl font-semibold leading-8 tracking-tight text-thamani-forest sm:text-2xl">
               {render_slot(@inner_block)}
             </h1>
-            <p :if={@subtitle != []} class="text-sm text-thamani-pewter">
+            <p :if={@subtitle != []} class="mt-0.5 text-sm leading-6 text-thamani-pewter">
               {render_slot(@subtitle)}
             </p>
           </div>
         </div>
-        <div class="flex-none">{render_slot(@actions)}</div>
+        <div
+          :if={@actions != []}
+          class="flex flex-col gap-2 sm:flex-none sm:flex-row sm:items-center [&>*]:w-full sm:[&>*]:w-auto"
+        >
+          {render_slot(@actions)}
+        </div>
       </header>
-      <div :if={@toolbar != []} class="flex flex-wrap items-center gap-3 p-5">
+      <div
+        :if={@toolbar != []}
+        class="flex flex-col items-stretch gap-3 p-4 sm:flex-row sm:flex-wrap sm:items-center sm:p-5"
+      >
         {render_slot(@toolbar)}
       </div>
     </div>
@@ -814,46 +822,67 @@ defmodule ThamaniDawaWeb.CoreComponents do
       end
 
     ~H"""
-    <div class="overflow-hidden rounded-xl border border-thamani-stone bg-thamani-snow">
-      <table class="w-full text-left">
-        <thead class="bg-thamani-canvas">
-          <tr>
-            <th :for={col <- @col} class="px-6 py-3 text-sm font-semibold text-slate-700">
-              {col[:label]}
-            </th>
-            <th :if={@action != []} class="px-6 py-3">
-              <span class="sr-only">{gettext("Actions")}</span>
-            </th>
-          </tr>
-        </thead>
-        <tbody
-          id={@id}
-          phx-update={is_struct(@rows, Phoenix.LiveView.LiveStream) && "stream"}
-          class="divide-y divide-thamani-stone"
-        >
-          <tr :if={@empty_state != []} id={"#{@id}-empty"} class="hidden only:table-row">
-            <td colspan={length(@col) + ((@action != [] && 1) || 0)} class="px-6 py-8">
-              {render_slot(@empty_state)}
-            </td>
-          </tr>
-          <tr :for={row <- @rows} id={@row_id && @row_id.(row)} class="hover:bg-thamani-canvas">
-            <td
-              :for={col <- @col}
-              phx-click={@row_click && @row_click.(row)}
-              class={["px-6 py-3 text-sm text-slate-900", @row_click && "hover:cursor-pointer"]}
+    <div class="relative overflow-hidden rounded-xl border border-thamani-stone bg-thamani-snow">
+      <div
+        class="overflow-x-auto overscroll-x-contain"
+        tabindex="0"
+        role="region"
+        aria-label="Data table"
+      >
+        <table class="w-full min-w-[42rem] text-left">
+          <thead class="bg-thamani-canvas">
+            <tr>
+              <th
+                :for={col <- @col}
+                scope="col"
+                class="whitespace-nowrap px-4 py-3 text-xs font-medium text-slate-600 sm:px-5"
+              >
+                {col[:label]}
+              </th>
+              <th :if={@action != []} scope="col" class="px-4 py-3 text-right sm:px-5">
+                <span class="sr-only">{gettext("Actions")}</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody
+            id={@id}
+            phx-update={is_struct(@rows, Phoenix.LiveView.LiveStream) && "stream"}
+            class="divide-y divide-thamani-stone"
+          >
+            <tr :if={@empty_state != []} id={"#{@id}-empty"} class="hidden only:table-row">
+              <td colspan={length(@col) + ((@action != [] && 1) || 0)} class="px-4 py-8 sm:px-5">
+                {render_slot(@empty_state)}
+              </td>
+            </tr>
+            <tr
+              :for={row <- @rows}
+              id={@row_id && @row_id.(row)}
+              class={[
+                "transition-colors duration-150",
+                @row_click && "hover:bg-thamani-canvas focus-within:bg-thamani-canvas"
+              ]}
             >
-              {render_slot(col, @row_item.(row))}
-            </td>
-            <td :if={@action != []} class="w-0 px-6 py-3 font-semibold">
-              <div class="flex gap-4">
-                <%= for action <- @action do %>
-                  {render_slot(action, @row_item.(row))}
-                <% end %>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+              <td
+                :for={col <- @col}
+                phx-click={@row_click && @row_click.(row)}
+                class={[
+                  "px-4 py-3.5 text-sm text-slate-900 sm:px-5",
+                  @row_click && "cursor-pointer"
+                ]}
+              >
+                {render_slot(col, @row_item.(row))}
+              </td>
+              <td :if={@action != []} class="w-0 whitespace-nowrap px-4 py-3.5 text-right sm:px-5">
+                <div class="flex items-center justify-end gap-3">
+                  <%= for action <- @action do %>
+                    {render_slot(action, @row_item.(row))}
+                  <% end %>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
     """
   end
@@ -977,14 +1006,15 @@ defmodule ThamaniDawaWeb.CoreComponents do
 
   def list(assigns) do
     ~H"""
-    <ul class="list">
-      <li :for={item <- @item} class="list-row">
-        <div class="list-col-grow">
-          <div class="font-bold">{item.title}</div>
-          <div>{render_slot(item)}</div>
-        </div>
-      </li>
-    </ul>
+    <dl class="divide-y divide-thamani-stone overflow-hidden rounded-xl border border-thamani-stone bg-thamani-snow">
+      <div
+        :for={item <- @item}
+        class="grid gap-1 px-4 py-3 sm:grid-cols-[minmax(8rem,0.4fr)_minmax(0,1fr)] sm:gap-5 sm:px-5"
+      >
+        <dt class="text-xs font-medium text-thamani-subtle">{item.title}</dt>
+        <dd class="min-w-0 break-words text-sm text-slate-900">{render_slot(item)}</dd>
+      </div>
+    </dl>
     """
   end
 

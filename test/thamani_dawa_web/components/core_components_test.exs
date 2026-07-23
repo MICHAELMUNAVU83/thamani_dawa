@@ -70,6 +70,24 @@ defmodule ThamaniDawaWeb.CoreComponentsTest do
     end
   end
 
+  describe "list/1" do
+    test "renders stable metadata as a semantic definition list" do
+      assigns = %{}
+
+      html =
+        rendered_to_string(~H"""
+        <.list>
+          <:item title="GTIN">00614141000012</:item>
+        </.list>
+        """)
+
+      assert html =~ "<dl"
+      assert html =~ "<dt"
+      assert html =~ "<dd"
+      assert html =~ "00614141000012"
+    end
+  end
+
   describe "header/1" do
     test "renders without a toolbar divider when no :toolbar slot is given" do
       assigns = %{}

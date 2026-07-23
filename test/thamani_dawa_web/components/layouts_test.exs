@@ -10,6 +10,22 @@ defmodule ThamaniDawaWeb.LayoutsTest do
   end
 
   describe "organization sidebar navigation" do
+    test "provides mobile navigation controls and identifies the active page", %{
+      conn: conn,
+      admin: admin
+    } do
+      {:ok, lv, _html} = live(log_in_user(conn, admin), ~p"/org/sites")
+
+      assert has_element?(
+               lv,
+               "#mobile-sidebar-toggle[aria-controls='sidebar-aside'][aria-expanded='false']"
+             )
+
+      assert has_element?(lv, "#sidebar-backdrop[aria-label='Close navigation']")
+      assert has_element?(lv, "#sidebar-aside[aria-label='Organization navigation']")
+      assert has_element?(lv, "a[aria-current='page']", "Sites")
+    end
+
     test "Sites appears immediately above Team in the main nav", %{conn: conn, admin: admin} do
       {:ok, lv, html} = live(log_in_user(conn, admin), ~p"/org/sites")
 
