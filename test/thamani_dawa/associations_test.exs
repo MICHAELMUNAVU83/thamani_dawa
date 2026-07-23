@@ -93,7 +93,6 @@ defmodule ThamaniDawa.AssociationsTest do
       orderer = staff_fixture(%{organization_id: organization.id})
       performer = staff_fixture(%{organization_id: organization.id})
       collector = staff_fixture(%{organization_id: organization.id})
-      verifier = staff_fixture(%{organization_id: organization.id})
 
       site = site_fixture(%{organization_id: organization.id})
       product = product_fixture(%{organization_id: organization.id})
@@ -123,8 +122,7 @@ defmodule ThamaniDawa.AssociationsTest do
         result
         |> Ecto.Changeset.change(
           performed_by_id: performer.id,
-          collected_by_id: collector.id,
-          verified_by_id: verifier.id
+          collected_by_id: collector.id
         )
         |> Repo.update!()
 
@@ -144,16 +142,10 @@ defmodule ThamaniDawa.AssociationsTest do
         |> then(&Repo.get!(Accounts.User, &1))
         |> Repo.preload(:collected_lab_order_results)
 
-      verifier =
-        verifier.id
-        |> then(&Repo.get!(Accounts.User, &1))
-        |> Repo.preload(:verified_lab_order_results)
-
       assert Enum.map(approver.approved_batches, & &1.id) == [received.id]
       assert Enum.map(orderer.ordered_lab_orders, & &1.id) == [lab_order_update.id]
       assert Enum.map(performer.performed_lab_order_results, & &1.id) == [result_update.id]
       assert Enum.map(collector.collected_lab_order_results, & &1.id) == [result_update.id]
-      assert Enum.map(verifier.verified_lab_order_results, & &1.id) == [result_update.id]
 
       # Cross-check: the performer's own approved_batches (a different role) is empty —
       # associations resolve by role, not by "any FK on this table pointing at users".
@@ -316,7 +308,7 @@ defmodule ThamaniDawa.AssociationsTest do
       assert loaded.approver == nil
     end
 
-    test "LabOrders.list_results_pending_verification/1 never resolves a performer from another organization" do
+    test "LabOrders.list_lab_order_results_for_order/2 never resolves a performer from another organization" do
       org_a = organization_fixture()
       org_b = organization_fixture()
 
@@ -328,7 +320,7 @@ defmodule ThamaniDawa.AssociationsTest do
         |> Ecto.Changeset.change(status: :completed, performed_by_id: foreign_performer.id)
         |> Repo.update()
 
-      [loaded] = LabOrders.list_results_pending_verification(org_a.id)
+      [loaded] = LabOrders.list_lab_order_results_for_order(org_a.id, completed.lab_order_id)
 
       assert loaded.id == completed.id
       assert loaded.performed_by_id == foreign_performer.id

@@ -2,7 +2,7 @@ defmodule ThamaniDawa.LabOrders.LabOrderResult do
   use Ecto.Schema
   import Ecto.Changeset
 
-  @statuses [:pending, :collected, :completed, :verified]
+  @statuses [:pending, :collected, :completed]
   @sample_types [:blood, :urine, :stool, :swab]
 
   schema "lab_order_results" do
@@ -19,7 +19,6 @@ defmodule ThamaniDawa.LabOrders.LabOrderResult do
     belongs_to :lab_test, ThamaniDawa.LabTests.LabTest
     belongs_to :performed_by, ThamaniDawa.Accounts.User, foreign_key: :performed_by_id
     belongs_to :collected_by, ThamaniDawa.Accounts.User, foreign_key: :collected_by_id
-    belongs_to :verified_by, ThamaniDawa.Accounts.User, foreign_key: :verified_by_id
 
     timestamps(type: :utc_datetime)
   end
@@ -37,7 +36,6 @@ defmodule ThamaniDawa.LabOrders.LabOrderResult do
       :test_performed_on,
       :performed_by_id,
       :collected_by_id,
-      :verified_by_id,
       :sample_type
     ])
     |> validate_required([:lab_test_id, :sample_type])
@@ -45,7 +43,6 @@ defmodule ThamaniDawa.LabOrders.LabOrderResult do
     |> foreign_key_constraint(:lab_test_id)
     |> foreign_key_constraint(:performed_by_id)
     |> foreign_key_constraint(:collected_by_id)
-    |> foreign_key_constraint(:verified_by_id)
     |> unique_constraint([:lab_order_id, :lab_test_id],
       name: :lab_order_results_unique_test_per_order,
       message: "this test has already been added to this order"

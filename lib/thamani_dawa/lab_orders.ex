@@ -60,7 +60,7 @@ defmodule ThamaniDawa.LabOrders do
 
   @doc """
   Creates a lab order header together with its `lab_order_results`, all in
-  one transaction (§9 "Lab order → verified result", step 1). Rolls back the
+  one transaction (§9 "Lab order → completed result", step 1). Rolls back the
   header if any result fails to validate. Returns
   `{:ok, %{lab_order: lab_order, lab_order_results: results}}`.
   """
@@ -128,8 +128,7 @@ defmodule ThamaniDawa.LabOrders do
 
   @doc """
   Lists a single lab order's results, preloaded with `lab_test`,
-  `performed_by`, `collected_by`, and `verified_by` — all scoped to the
-  organization.
+  `performed_by`, and `collected_by` — all scoped to the organization.
   """
   def list_lab_order_results_for_order(organization_id, lab_order_id) do
     lab_test_query = from t in LabTest, where: t.organization_id == ^organization_id
@@ -142,8 +141,7 @@ defmodule ThamaniDawa.LabOrders do
         preload: [
           lab_test: ^lab_test_query,
           performed_by: ^user_query,
-          collected_by: ^user_query,
-          verified_by: ^user_query
+          collected_by: ^user_query
         ]
     )
   end
@@ -199,72 +197,7 @@ defmodule ThamaniDawa.LabOrders do
 
   defp parse_collection_date(_), do: Date.utc_today()
 
-  @doc """
-  Lists all lab order results with status :completed for an organization,
-  preloaded with `lab_test`, `performed_by`, and `lab_order` (itself
-  preloaded with `patient_visit: :patient`) — every preload scoped to the
-  same organization, so a result can never resolve an association that
-  belongs to a different tenant.
-  """
-  def list_results_pending_verification(organization_id) do
-    patient_query = from p in Patient, where: p.organization_id == ^organization_id
-
-    patient_visit_query =
-      from pv in PatientVisit,
-        where: pv.organization_id == ^organization_id,
-        preload: [patient: ^patient_query]
-
-    lab_order_query =
-      from o in LabOrder,
-        where: o.organization_id == ^organization_id,
-        preload: [patient_visit: ^patient_visit_query]
-
-    lab_test_query = from t in LabTest, where: t.organization_id == ^organization_id
-    user_query = from u in User, where: u.organization_id == ^organization_id
-
-    Repo.all(
-      from r in LabOrderResult,
-        where: r.organization_id == ^organization_id,
-        where: r.status == :completed,
-        preload: [
-          lab_order: ^lab_order_query,
-          lab_test: ^lab_test_query,
-          performed_by: ^user_query
-        ]
-    )
-  end
-
-  @doc """
-  Verifies a completed lab order result on behalf of `verifier_id`. Returns
-  `{:error, :cannot_self_verify}` when `verifier_id` matches the user who
-  performed the test, enforcing the two-person review requirement.
-  """
-  def verify_result(organization_id, result_id, verifier_id)
-      when is_integer(organization_id) and is_integer(verifier_id) do
-    result = get_lab_order_result!(organization_id, result_id)
-
-    if result.performed_by_id == verifier_id do
-      {:error, :cannot_self_verify}
-    else
-      do_verify_result(organization_id, result, verifier_id)
-    end
-  end
-
-  defp do_verify_result(organization_id, result, verifier_id) do
-    Repo.transaction(fn ->
-      with {:ok, verified} <-
-             result
-             |> Ecto.Changeset.change(status: :verified, verified_by_id: verifier_id)
-             |> Repo.update(),
-           {:ok, _} <- recompute_lab_order_status(organization_id, verified.lab_order_id) do
-        verified
-      else
-        {:error, reason} -> Repo.rollback(reason)
-      end
-    end)
-  end
-
-  ## Result entry (§9 "Lab order → verified result", step 2)
+  ## Result entry (§9 "Lab order → completed result", step 2)
 
   @doc """
   Records `raw_values` into a `lab_order_results` row's `results`, storing
@@ -303,13 +236,13 @@ defmodule ThamaniDawa.LabOrders do
     |> Repo.update()
   end
 
-  # Rolls the parent order status up from its child results: `verified` once
-  # every result is verified, `completed` once every result is at least
-  # completed, `in_progress` once any result has moved past pending, and
-  # left alone otherwise. A `cancelled` order is never resurrected, no
-  # matter what happens to its results. The order row is locked FOR UPDATE
-  # so concurrent recomputes (e.g. two results verified at the same moment)
-  # serialize instead of both reading a stale snapshot of their siblings.
+  # Rolls the parent order status up from its child results: `completed` once
+  # every result is completed, `in_progress` once any result has moved past
+  # pending, and left alone otherwise. A `cancelled` order is never
+  # resurrected, no matter what happens to its results. The order row is
+  # locked FOR UPDATE so concurrent recomputes (e.g. two results completed at
+  # the same moment) serialize instead of both reading a stale snapshot of
+  # their siblings.
   defp recompute_lab_order_status(organization_id, lab_order_id) do
     lab_order =
       Repo.one!(
@@ -328,13 +261,10 @@ defmodule ThamaniDawa.LabOrders do
           results == [] ->
             lab_order.status
 
-          Enum.all?(results, &(&1.status == :verified)) ->
-            :verified
-
-          Enum.all?(results, &(&1.status in [:completed, :verified])) ->
+          Enum.all?(results, &(&1.status == :completed)) ->
             :completed
 
-          Enum.any?(results, &(&1.status in [:completed, :collected, :verified])) ->
+          Enum.any?(results, &(&1.status in [:completed, :collected])) ->
             :in_progress
 
           true ->
@@ -347,7 +277,7 @@ defmodule ThamaniDawa.LabOrders do
     end
   end
 
-  ## Consumable usage (§9 "Lab order → verified result", step 4)
+  ## Consumable usage (§9 "Lab order → completed result", step 4)
 
   @doc """
   Draws `quantity` from a `batches` row for reagent/consumable usage,

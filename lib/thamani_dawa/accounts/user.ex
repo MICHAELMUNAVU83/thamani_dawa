@@ -2,7 +2,7 @@ defmodule ThamaniDawa.Accounts.User do
   use Ecto.Schema
   import Ecto.Changeset
 
-  @roles [:admin, :pharmacist, :lab_technician]
+  @roles [:admin, :pharmacist, :lab_technician, :pharma_lab]
 
   schema "users" do
     field :name, :string
@@ -33,9 +33,6 @@ defmodule ThamaniDawa.Accounts.User do
 
     has_many :collected_lab_order_results, ThamaniDawa.LabOrders.LabOrderResult,
       foreign_key: :collected_by_id
-
-    has_many :verified_lab_order_results, ThamaniDawa.LabOrders.LabOrderResult,
-      foreign_key: :verified_by_id
 
     has_many :lab_consumable_usages, ThamaniDawa.LabOrders.LabConsumableUsage,
       foreign_key: :used_by_id
