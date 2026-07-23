@@ -53,6 +53,10 @@ defmodule ThamaniDawaWeb.Router do
       live "/org/products/:id", ProductLive.Show, :show
       live "/org/products/:id/batches/new", ProductLive.Show, :new_batch
       live "/org/products/:id/edit", ProductLive.Index, :edit
+
+      live "/org/suppliers", SupplierLive.Index, :index
+      live "/org/suppliers/new", SupplierLive.Index, :new
+      live "/org/suppliers/:id/edit", SupplierLive.Index, :edit
     end
 
     live_session :pharmacy, on_mount: [{ThamaniDawaWeb.UserAuth, :require_pharmacy_access}] do

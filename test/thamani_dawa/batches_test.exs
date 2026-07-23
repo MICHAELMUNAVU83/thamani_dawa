@@ -146,6 +146,65 @@ defmodule ThamaniDawa.BatchesTest do
       assert %{product_id: ["does not belong to this organization"]} = errors_on(changeset)
     end
 
+    test "rejects a supplier_id that belongs to a different organization" do
+      organization = organization_fixture()
+      other_org = organization_fixture()
+      product = product_fixture(%{organization_id: organization.id})
+      site = site_fixture(%{organization_id: organization.id})
+      hostile_supplier = supplier_fixture(%{organization_id: other_org.id})
+
+      assert {:error, changeset} =
+               Batches.create_batch(organization.id, %{
+                 product_id: product.id,
+                 site_id: site.id,
+                 supplier_id: hostile_supplier.id,
+                 gtin: "00614141000012",
+                 batch_no: "LOT-X",
+                 expiry_date: ~D[2027-01-01],
+                 quantity: 10
+               })
+
+      assert %{supplier_id: ["does not belong to this organization"]} = errors_on(changeset)
+    end
+
+    test "accepts a supplier_id that belongs to the same organization" do
+      organization = organization_fixture()
+      product = product_fixture(%{organization_id: organization.id})
+      site = site_fixture(%{organization_id: organization.id})
+      supplier = supplier_fixture(%{organization_id: organization.id})
+
+      assert {:ok, batch} =
+               Batches.create_batch(organization.id, %{
+                 product_id: product.id,
+                 site_id: site.id,
+                 supplier_id: supplier.id,
+                 gtin: "00614141000012",
+                 batch_no: "LOT-X",
+                 expiry_date: ~D[2027-01-01],
+                 quantity: 10
+               })
+
+      assert batch.supplier_id == supplier.id
+    end
+
+    test "allows omitting supplier_id entirely (e.g. an inter-site transfer)" do
+      organization = organization_fixture()
+      product = product_fixture(%{organization_id: organization.id})
+      site = site_fixture(%{organization_id: organization.id})
+
+      assert {:ok, batch} =
+               Batches.create_batch(organization.id, %{
+                 product_id: product.id,
+                 site_id: site.id,
+                 gtin: "00614141000012",
+                 batch_no: "LOT-X",
+                 expiry_date: ~D[2027-01-01],
+                 quantity: 10
+               })
+
+      assert is_nil(batch.supplier_id)
+    end
+
     test "rejects a gtin that fails the GS1 check digit" do
       organization = organization_fixture()
       product = product_fixture(%{organization_id: organization.id})

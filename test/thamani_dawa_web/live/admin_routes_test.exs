@@ -18,7 +18,14 @@ defmodule ThamaniDawaWeb.AdminRoutesTest do
   alias ThamaniDawa.Repo
   alias ThamaniDawaWeb.UserAuth
 
-  for path <- ["/org/team", "/org/team/new", "/org/sites", "/org/sites/new"] do
+  for path <- [
+        "/org/team",
+        "/org/team/new",
+        "/org/sites",
+        "/org/sites/new",
+        "/org/suppliers",
+        "/org/suppliers/new"
+      ] do
     describe "GET #{path}" do
       @path path
 
