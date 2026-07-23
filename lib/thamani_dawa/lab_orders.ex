@@ -9,9 +9,13 @@ defmodule ThamaniDawa.LabOrders do
   """
 
   import Ecto.Query, warn: false
+  alias ThamaniDawa.Accounts.User
   alias ThamaniDawa.Batches
   alias ThamaniDawa.LabOrders.{LabConsumableUsage, LabOrder, LabOrderResult}
+  alias ThamaniDawa.LabTests.LabTest
+  alias ThamaniDawa.Patients.Patient
   alias ThamaniDawa.PatientVisits
+  alias ThamaniDawa.PatientVisits.PatientVisit
   alias ThamaniDawa.Repo
 
   ## Lab orders
@@ -19,6 +23,26 @@ defmodule ThamaniDawa.LabOrders do
   @doc "Lists an organization's lab orders."
   def list_lab_orders(organization_id) do
     Repo.all(from o in LabOrder, where: o.organization_id == ^organization_id)
+  end
+
+  @doc """
+  Lists an organization's lab orders, preloaded with `patient_visit: :patient`
+  (both scoped to the same organization) — for screens that display the
+  patient's name per order without a separate lookup.
+  """
+  def list_lab_orders_with_patient(organization_id) do
+    patient_query = from p in Patient, where: p.organization_id == ^organization_id
+
+    patient_visit_query =
+      from pv in PatientVisit,
+        where: pv.organization_id == ^organization_id,
+        preload: [patient: ^patient_query]
+
+    Repo.all(
+      from o in LabOrder,
+        where: o.organization_id == ^organization_id,
+        preload: [patient_visit: ^patient_visit_query]
+    )
   end
 
   @doc "Gets a single lab order scoped to an organization. Raises if not found."
@@ -65,9 +89,7 @@ defmodule ThamaniDawa.LabOrders do
            {:ok, lab_order} <-
              create_lab_order(
                organization_id,
-               attrs
-               |> Map.put("patient_visit_id", visit.id)
-               |> Map.put("patient_id", visit.patient_id)
+               Map.put(attrs, "patient_visit_id", visit.id)
              ),
            {:ok, results} <-
              create_lab_order_results(organization_id, lab_order.id, results_attrs) do
@@ -102,6 +124,28 @@ defmodule ThamaniDawa.LabOrders do
   @doc "Lists every lab order result in an organization (across all lab orders)."
   def list_lab_order_results(organization_id) do
     Repo.all(from r in LabOrderResult, where: r.organization_id == ^organization_id)
+  end
+
+  @doc """
+  Lists a single lab order's results, preloaded with `lab_test`,
+  `performed_by`, `collected_by`, and `verified_by` — all scoped to the
+  organization.
+  """
+  def list_lab_order_results_for_order(organization_id, lab_order_id) do
+    lab_test_query = from t in LabTest, where: t.organization_id == ^organization_id
+    user_query = from u in User, where: u.organization_id == ^organization_id
+
+    Repo.all(
+      from r in LabOrderResult,
+        where: r.organization_id == ^organization_id,
+        where: r.lab_order_id == ^lab_order_id,
+        preload: [
+          lab_test: ^lab_test_query,
+          performed_by: ^user_query,
+          collected_by: ^user_query,
+          verified_by: ^user_query
+        ]
+    )
   end
 
   @doc "Creates a lab order result under the given lab order."
@@ -155,12 +199,38 @@ defmodule ThamaniDawa.LabOrders do
 
   defp parse_collection_date(_), do: Date.utc_today()
 
-  @doc "Lists all lab order results with status :completed for an organization."
+  @doc """
+  Lists all lab order results with status :completed for an organization,
+  preloaded with `lab_test`, `performed_by`, and `lab_order` (itself
+  preloaded with `patient_visit: :patient`) — every preload scoped to the
+  same organization, so a result can never resolve an association that
+  belongs to a different tenant.
+  """
   def list_results_pending_verification(organization_id) do
+    patient_query = from p in Patient, where: p.organization_id == ^organization_id
+
+    patient_visit_query =
+      from pv in PatientVisit,
+        where: pv.organization_id == ^organization_id,
+        preload: [patient: ^patient_query]
+
+    lab_order_query =
+      from o in LabOrder,
+        where: o.organization_id == ^organization_id,
+        preload: [patient_visit: ^patient_visit_query]
+
+    lab_test_query = from t in LabTest, where: t.organization_id == ^organization_id
+    user_query = from u in User, where: u.organization_id == ^organization_id
+
     Repo.all(
       from r in LabOrderResult,
         where: r.organization_id == ^organization_id,
-        where: r.status == :completed
+        where: r.status == :completed,
+        preload: [
+          lab_order: ^lab_order_query,
+          lab_test: ^lab_test_query,
+          performed_by: ^user_query
+        ]
     )
   end
 

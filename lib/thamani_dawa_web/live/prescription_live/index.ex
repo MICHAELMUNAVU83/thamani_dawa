@@ -302,7 +302,7 @@ defmodule ThamaniDawaWeb.PrescriptionLive.Index do
                   required
                 />
                 <.input field={@patient_form[:phone]} label="Phone" required />
-                <.input field={@patient_form[:national_id]} label="National ID" required />
+                <.input field={@patient_form[:national_id]} label="National ID" />
               </div>
             </div>
           </div>
