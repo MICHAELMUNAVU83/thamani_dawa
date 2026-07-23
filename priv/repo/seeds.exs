@@ -7,6 +7,7 @@ alias ThamaniDawa.LabOrders
 alias ThamaniDawa.LabOrders.{LabConsumableUsage, LabOrder, LabOrderResult}
 alias ThamaniDawa.LabTests
 alias ThamaniDawa.LabTests.LabTest
+alias ThamaniDawa.LabTests.LabTestCategory
 alias ThamaniDawa.Organizations
 alias ThamaniDawa.Organizations.Organization
 alias ThamaniDawa.Patients
@@ -285,7 +286,6 @@ batch = fn product, site, batch_no, quantity, unit_price ->
       cost_per_unit: Decimal.new("20.00"),
       unit_price: Decimal.new(unit_price),
       supplier_id: supplier.id,
-      received_by_id: pharmacist.id,
       received_at: now,
       approver_id: pharmacist.id
     },
@@ -409,6 +409,14 @@ _dispensed_item =
     prescription_item
   end
 
+hematology_category =
+  insert_or_get.(
+    LabTestCategory,
+    %{organization_id: organization_id, name: "Hematology"},
+    %{},
+    fn attrs -> LabTests.create_lab_test_category(organization_id, attrs) end
+  )
+
 cbc_test =
   insert_or_get.(
     LabTest,
@@ -425,7 +433,7 @@ cbc_test =
         "mch" => %{"type" => "number", "unit" => "pg"},
         "mchc" => %{"type" => "number", "unit" => "g/dL"}
       },
-      category: "Hematology"
+      category_id: hematology_category.id
     },
     fn attrs -> LabTests.create_lab_test(organization_id, attrs) end
   )
@@ -446,12 +454,11 @@ lab_order =
     LabOrder,
     %{
       organization_id: organization_id,
-      patient_id: patient.id,
+      patient_visit_id: patient_visit.id,
       prescriber_name: "Dr. Demo"
     },
     %{
       site_id: lab_site.id,
-      patient_visit_id: patient_visit.id,
       ordered_by_id: lab_technician.id,
       urgency: "routine",
       payment_type: "cash",
@@ -460,7 +467,7 @@ lab_order =
       lab_request: "Complete blood count",
       referring_facility: "Demo Care Diagnostic Lab",
       referring_doctor: "Dr. Demo",
-      referred_date: ~T[09:00:00]
+      referred_date: ~D[2026-01-15]
     },
     fn attrs -> LabOrders.create_lab_order(organization_id, attrs) end
   )
@@ -474,7 +481,7 @@ lab_order_result =
       lab_test_id: cbc_test.id
     },
     %{
-      sample_collection_description: 1
+      sample_type: :blood
     },
     fn attrs -> LabOrders.create_lab_order_result(organization_id, lab_order.id, attrs) end
   )

@@ -112,7 +112,7 @@ defmodule ThamaniDawaWeb.LabOrderLiveTest do
         "tests" => %{
           "0" => %{
             "lab_test_id" => to_string(ctx.lab_test.id),
-            "sample_collection_description" => "1"
+            "sample_type" => "blood"
           }
         }
       })
@@ -150,7 +150,7 @@ defmodule ThamaniDawaWeb.LabOrderLiveTest do
         "tests" => %{
           "0" => %{
             "lab_test_id" => to_string(ctx.lab_test.id),
-            "sample_collection_description" => "1"
+            "sample_type" => "blood"
           }
         }
       })
@@ -201,11 +201,11 @@ defmodule ThamaniDawaWeb.LabOrderLiveTest do
           "tests" => %{
             "0" => %{
               "lab_test_id" => to_string(ctx.lab_test.id),
-              "sample_collection_description" => ""
+              "sample_type" => ""
             },
             "1" => %{
               "lab_test_id" => to_string(second_test.id),
-              "sample_collection_description" => ""
+              "sample_type" => ""
             }
           }
         })

@@ -1,7 +1,6 @@
 defmodule ThamaniDawaWeb.LabOrderLive.Show do
   use ThamaniDawaWeb, :live_view
 
-  alias ThamaniDawa.Accounts
   alias ThamaniDawa.LabOrders
   alias ThamaniDawa.LabTests
   alias ThamaniDawa.Patients
@@ -25,24 +24,12 @@ defmodule ThamaniDawaWeb.LabOrderLive.Show do
     visit = PatientVisits.get_patient_visit!(organization_id, lab_order.patient_visit_id)
     patient = Patients.get_patient!(organization_id, visit.patient_id)
 
-    results =
-      organization_id
-      |> LabOrders.list_lab_order_results()
-      |> Enum.filter(&(&1.lab_order_id == lab_order.id))
-
-    user_ids =
-      results
-      |> Enum.flat_map(&[&1.performed_by_id, &1.collected_by_id, &1.verified_by_id])
-      |> Enum.filter(& &1)
-      |> Enum.uniq()
-
-    users_by_id = Map.new(user_ids, &{&1, Accounts.get_user!(organization_id, &1)})
+    results = LabOrders.list_lab_order_results_for_order(organization_id, lab_order.id)
 
     socket
     |> assign(:lab_order, lab_order)
     |> assign(:patient, patient)
     |> assign(:results, results)
-    |> assign(:users_by_id, users_by_id)
   end
 
   def handle_event("start_collect", %{"id" => id}, socket) do
@@ -85,21 +72,16 @@ defmodule ThamaniDawaWeb.LabOrderLive.Show do
     {:noreply, put_flash(socket, :error, "Choose a test to add.")}
   end
 
-  defp test_name(lab_tests, lab_test_id) do
-    case Enum.find(lab_tests, &(&1.id == lab_test_id)) do
-      nil -> "(unknown test)"
-      test -> test.name
-    end
-  end
+  defp test_name(%{lab_test: nil}), do: "(unknown test)"
+  defp test_name(%{lab_test: test}), do: test.name
 
-  defp user_name(users_by_id, id), do: id && Map.get(users_by_id, id, %{name: "—"}).name
+  defp user_name(nil), do: "—"
+  defp user_name(user), do: user.name
 
-  defp result_unit(lab_tests, lab_test_id, key) do
-    case Enum.find(lab_tests, &(&1.id == lab_test_id)) do
-      nil -> ""
-      test -> get_in(test.field_definitions, [key, "unit"]) || ""
-    end
-  end
+  defp result_unit(%{lab_test: nil}, _key), do: ""
+
+  defp result_unit(%{lab_test: test}, key),
+    do: get_in(test.field_definitions, [key, "unit"]) || ""
 
   def render(assigns) do
     ~H"""
@@ -121,24 +103,18 @@ defmodule ThamaniDawaWeb.LabOrderLive.Show do
 
       <.header class="mt-4">Results</.header>
       <.table id="lab-order-results" rows={@results}>
-        <:col :let={result} label="Test">{test_name(@lab_tests, result.lab_test_id)}</:col>
+        <:col :let={result} label="Test">{test_name(result)}</:col>
         <:col :let={result} label="Status">{Phoenix.Naming.humanize(result.status)}</:col>
         <:col :let={result} label="Sample collected">{result.sample_collected_on}</:col>
         <:col :let={result} label="Collection notes">{result.collection_notes}</:col>
-        <:col :let={result} label="Collected by">
-          {user_name(@users_by_id, result.collected_by_id)}
-        </:col>
-        <:col :let={result} label="Performed by">
-          {user_name(@users_by_id, result.performed_by_id)}
-        </:col>
-        <:col :let={result} label="Verified by">
-          {user_name(@users_by_id, result.verified_by_id)}
-        </:col>
+        <:col :let={result} label="Collected by">{user_name(result.collected_by)}</:col>
+        <:col :let={result} label="Performed by">{user_name(result.performed_by)}</:col>
+        <:col :let={result} label="Verified by">{user_name(result.verified_by)}</:col>
         <:col :let={result} label="Results">
           <div :if={result.results != %{}} class="space-y-0.5 text-sm">
             <div :for={{key, %{"value" => value}} <- result.results}>
               <span class="font-medium">{key}</span>
-              {" #{value} #{result_unit(@lab_tests, result.lab_test_id, key)}"}
+              {" #{value} #{result_unit(result, key)}"}
             </div>
           </div>
           <span :if={result.results == %{}}>—</span>

@@ -17,12 +17,13 @@ defmodule ThamaniDawa.LabTestsTest do
 
     test "defaults is_active to true and scopes to the organization" do
       organization = organization_fixture()
+      category = lab_test_category_fixture(%{organization_id: organization.id})
 
       assert {:ok, %LabTest{} = lab_test} =
                LabTests.create_lab_test(organization.id, %{
                  name: "Full Blood Count",
                  price: Decimal.new("500.00"),
-                 category: "Haematology",
+                 category_id: category.id,
                  field_definitions: %{"haemoglobin" => %{"type" => "number"}}
                })
 
