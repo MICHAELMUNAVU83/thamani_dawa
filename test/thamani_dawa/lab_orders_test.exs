@@ -4,6 +4,7 @@ defmodule ThamaniDawa.LabOrdersTest do
   alias ThamaniDawa.Batches
   alias ThamaniDawa.LabOrders
   alias ThamaniDawa.LabOrders.{LabOrder, LabOrderResult}
+  alias ThamaniDawa.PatientVisits
 
   import ThamaniDawa.AccountsFixtures
   import ThamaniDawa.BatchesFixtures
@@ -17,7 +18,7 @@ defmodule ThamaniDawa.LabOrdersTest do
     lab_request: "CBC panel",
     referring_facility: "General Hospital",
     referring_doctor: "Dr. Jane Doe",
-    referred_date: ~T[09:00:00]
+    referred_date: ~D[2026-01-15]
   }
 
   describe "create_lab_order/2" do
@@ -30,8 +31,6 @@ defmodule ThamaniDawa.LabOrdersTest do
                site_id: ["can't be blank"],
                patient_visit_id: ["can't be blank"]
              } = errors_on(changeset)
-
-      refute Map.has_key?(errors_on(changeset), :patient_id)
     end
 
     test "defaults status to pending and scopes to the organization" do
@@ -134,7 +133,7 @@ defmodule ThamaniDawa.LabOrdersTest do
   end
 
   describe "create_lab_order_with_results/4 (with auto-created visit)" do
-    test "sets both patient_visit_id and patient_id on the resulting order" do
+    test "sets patient_visit_id on the resulting order, linking to the patient via the visit" do
       organization = organization_fixture()
       site = site_fixture(%{organization_id: organization.id})
       patient = patient_fixture(%{organization_id: organization.id})
@@ -152,12 +151,14 @@ defmodule ThamaniDawa.LabOrdersTest do
                LabOrders.create_lab_order_with_results(
                  organization.id,
                  %{"site_id" => site.id},
-                 [%{lab_test_id: lab_test.id, sample_collection_description: 1}],
+                 [%{lab_test_id: lab_test.id, sample_type: :blood}],
                  visit_attrs
                )
 
-      assert header.patient_id == patient.id
       assert header.patient_visit_id != nil
+
+      visit = PatientVisits.get_patient_visit!(organization.id, header.patient_visit_id)
+      assert visit.patient_id == patient.id
     end
   end
 
@@ -180,14 +181,13 @@ defmodule ThamaniDawa.LabOrdersTest do
                  organization.id,
                  Map.merge(@valid_header_extra, %{
                    site_id: site.id,
-                   patient_id: patient.id,
                    patient_visit_id: lab_order.patient_visit_id
                  }),
-                 [%{lab_test_id: lab_test.id, sample_collection_description: 1}]
+                 [%{lab_test_id: lab_test.id, sample_type: :blood}]
                )
 
       assert result.status == :pending
-      assert header.referred_date == ~T[09:00:00]
+      assert header.referred_date == ~D[2026-01-15]
     end
 
     test "rolls back the header when a result is invalid" do
@@ -209,7 +209,6 @@ defmodule ThamaniDawa.LabOrdersTest do
                  organization.id,
                  Map.merge(@valid_header_extra, %{
                    site_id: site.id,
-                   patient_id: patient.id,
                    patient_visit_id: lab_order.patient_visit_id
                  }),
                  [%{}]

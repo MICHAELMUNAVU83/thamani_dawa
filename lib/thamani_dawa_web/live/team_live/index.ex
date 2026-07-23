@@ -47,22 +47,15 @@ defmodule ThamaniDawaWeb.TeamLive.Index do
 
   defp assign_lists(socket) do
     organization_id = socket.assigns.current_scope.organization_id
-    sites = Sites.list_sites(organization_id)
-    sites_by_id = Map.new(sites, &{&1.id, &1})
 
     socket
     |> assign(:users, Accounts.list_users(organization_id))
-    |> assign(:sites, sites)
-    |> assign(:sites_by_id, sites_by_id)
+    |> assign(:sites, Sites.list_sites(organization_id))
     |> assign_new(:organization, fn -> Organizations.get_organization!(organization_id) end)
   end
 
-  defp site_name(sites_by_id, site_id) do
-    case sites_by_id[site_id] do
-      nil -> "—"
-      site -> site.name
-    end
-  end
+  defp site_name(%User{site: nil}), do: "—"
+  defp site_name(%User{site: site}), do: site.name
 
   defp status(%User{hashed_password: nil}), do: "Invited"
   defp status(%User{}), do: "Active"
@@ -108,7 +101,7 @@ defmodule ThamaniDawaWeb.TeamLive.Index do
         <:col :let={user} label="Name">{user.name}</:col>
         <:col :let={user} label="Email">{user.email}</:col>
         <:col :let={user} label="Role">{Phoenix.Naming.humanize(user.role)}</:col>
-        <:col :let={user} label="Home site">{site_name(@sites_by_id, user.site_id)}</:col>
+        <:col :let={user} label="Home site">{site_name(user)}</:col>
         <:col :let={user} label="Status">{status(user)}</:col>
       </.table>
     </Layouts.org_shell>

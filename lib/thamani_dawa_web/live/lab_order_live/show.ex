@@ -1,11 +1,12 @@
 defmodule ThamaniDawaWeb.LabOrderLive.Show do
   use ThamaniDawaWeb, :live_view
 
-  alias ThamaniDawa.Accounts
   alias ThamaniDawa.LabOrders
   alias ThamaniDawa.LabTests
   alias ThamaniDawa.Patients
   alias ThamaniDawa.PatientVisits
+
+  @sample_types [{"Blood", :blood}, {"Urine", :urine}, {"Stool", :stool}, {"Swab", :swab}]
 
   def mount(%{"id" => id}, _session, socket) do
     organization_id = socket.assigns.current_scope.organization_id
@@ -13,6 +14,7 @@ defmodule ThamaniDawaWeb.LabOrderLive.Show do
     socket =
       socket
       |> assign(:lab_tests, LabTests.list_active_lab_tests(organization_id))
+      |> assign(:sample_types, @sample_types)
       |> assign(:collecting_result_id, nil)
       |> assign(:editing_result, nil)
       |> assign(:editing_lab_test, nil)
@@ -49,24 +51,12 @@ defmodule ThamaniDawaWeb.LabOrderLive.Show do
     visit = PatientVisits.get_patient_visit!(organization_id, lab_order.patient_visit_id)
     patient = Patients.get_patient!(organization_id, visit.patient_id)
 
-    results =
-      organization_id
-      |> LabOrders.list_lab_order_results()
-      |> Enum.filter(&(&1.lab_order_id == lab_order.id))
-
-    user_ids =
-      results
-      |> Enum.flat_map(&[&1.performed_by_id, &1.collected_by_id])
-      |> Enum.filter(& &1)
-      |> Enum.uniq()
-
-    users_by_id = Map.new(user_ids, &{&1, Accounts.get_user!(organization_id, &1)})
+    results = LabOrders.list_lab_order_results_for_order(organization_id, lab_order.id)
 
     socket
     |> assign(:lab_order, lab_order)
     |> assign(:patient, patient)
     |> assign(:results, results)
-    |> assign(:users_by_id, users_by_id)
   end
 
   def handle_event("start_collect", %{"id" => id}, socket) do
@@ -130,21 +120,16 @@ defmodule ThamaniDawaWeb.LabOrderLive.Show do
     end
   end
 
-  defp test_name(lab_tests, lab_test_id) do
-    case Enum.find(lab_tests, &(&1.id == lab_test_id)) do
-      nil -> "(unknown test)"
-      test -> test.name
-    end
-  end
+  defp test_name(%{lab_test: %{name: name}}), do: name
+  defp test_name(_), do: "(unknown test)"
 
-  defp user_name(users_by_id, id), do: id && Map.get(users_by_id, id, %{name: "—"}).name
+  defp user_name(%{name: name}), do: name
+  defp user_name(_), do: "—"
 
-  defp result_unit(lab_tests, lab_test_id, key) do
-    case Enum.find(lab_tests, &(&1.id == lab_test_id)) do
-      nil -> ""
-      test -> get_in(test.field_definitions, [key, "unit"]) || ""
-    end
-  end
+  defp result_unit(%{lab_test: %{field_definitions: defs}}, key) when is_map(defs),
+    do: get_in(defs, [key, "unit"]) || ""
+
+  defp result_unit(_result, _key), do: ""
 
   defp current_value(result, key), do: get_in(result.results, [key, "value"])
 
@@ -269,7 +254,7 @@ defmodule ThamaniDawaWeb.LabOrderLive.Show do
         >
           <div class="flex items-start justify-between gap-4">
             <h3 class="text-base font-semibold" style="color: #1F2430;">
-              {test_name(@lab_tests, result.lab_test_id)}
+              {test_name(result)}
             </h3>
             <.status_pill kind={:result} status={result.status} />
           </div>
@@ -289,21 +274,24 @@ defmodule ThamaniDawaWeb.LabOrderLive.Show do
               <div class="mt-0.5 text-sm font-medium" style="color: #1F2430;">
                 {value}
                 <span class="font-normal" style="color: #9AA3B5;">
-                  {result_unit(@lab_tests, result.lab_test_id, key)}
+                  {result_unit(result, key)}
                 </span>
               </div>
             </div>
           </div>
 
           <dl class="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4">
+            <.field label="Sample type">
+              {if result.sample_type, do: Phoenix.Naming.humanize(result.sample_type), else: "—"}
+            </.field>
             <.field label="Sample collected">
               {format_date(result.sample_collected_on)}<span
                 :if={result.collected_by_id}
                 style="color: #9AA3B5;"
-              > · {user_name(@users_by_id, result.collected_by_id)}</span>
+              > · {user_name(result.collected_by)}</span>
             </.field>
             <.field label="Performed by">
-              {user_name(@users_by_id, result.performed_by_id) || "—"}
+              {user_name(result.performed_by)}
             </.field>
             <.field :if={result.collection_notes not in [nil, ""]} label="Collection notes">
               {result.collection_notes}
@@ -369,7 +357,7 @@ defmodule ThamaniDawaWeb.LabOrderLive.Show do
           phx-submit="add_result"
           class="flex flex-col sm:flex-row sm:items-end gap-3 [&_div]:mb-0"
         >
-          <div class="w-full sm:w-72">
+          <div class="w-full sm:w-64">
             <.input
               type="select"
               name="lab_test_id"
@@ -377,6 +365,15 @@ defmodule ThamaniDawaWeb.LabOrderLive.Show do
               value={nil}
               options={Enum.map(@lab_tests, &{&1.name, &1.id})}
               prompt="Choose a test"
+            />
+          </div>
+          <div class="w-full sm:w-44">
+            <.input
+              type="select"
+              name="sample_type"
+              label="Sample type"
+              value={:blood}
+              options={@sample_types}
             />
           </div>
           <.button variant="primary" class="w-full sm:w-auto">Add test</.button>

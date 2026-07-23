@@ -3,9 +3,11 @@ defmodule ThamaniDawaWeb.LabTestLive.Index do
 
   alias ThamaniDawa.LabTests
   alias ThamaniDawa.LabTests.LabTest
+  alias ThamaniDawa.LabTests.LabTestCategory
 
   def mount(_params, _session, socket) do
     org_id = socket.assigns.current_scope.organization_id
+    categories = LabTests.list_lab_test_categories(org_id)
 
     {:ok,
      socket
@@ -13,6 +15,8 @@ defmodule ThamaniDawaWeb.LabTestLive.Index do
      |> assign(:form, nil)
      |> assign(:field_defs_json, "{}")
      |> assign(:field_defs_error, nil)
+     |> assign(:categories, Enum.map(categories, &{&1.name, &1.id}))
+     |> assign(:categories_by_id, Map.new(categories, &{&1.id, &1}))
      |> stream(:lab_tests, LabTests.list_lab_tests(org_id))}
   end
 
@@ -25,6 +29,11 @@ defmodule ThamaniDawaWeb.LabTestLive.Index do
     |> assign(:lab_test, nil)
     |> assign(:field_defs_json, "{}")
     |> assign(:field_defs_error, nil)
+    |> assign(:use_new_category, false)
+    |> assign(
+      :category_form,
+      to_form(LabTestCategory.changeset(%LabTestCategory{}, %{}), as: :category)
+    )
     |> assign(:form, to_form(LabTests.change_lab_test(%LabTest{}, %{}), as: :lab_test))
   end
 
@@ -36,6 +45,11 @@ defmodule ThamaniDawaWeb.LabTestLive.Index do
     |> assign(:lab_test, lab_test)
     |> assign(:field_defs_json, Jason.encode!(lab_test.field_definitions || %{}, pretty: true))
     |> assign(:field_defs_error, nil)
+    |> assign(:use_new_category, false)
+    |> assign(
+      :category_form,
+      to_form(LabTestCategory.changeset(%LabTestCategory{}, %{}), as: :category)
+    )
     |> assign(:form, to_form(LabTests.change_lab_test(lab_test, %{}), as: :lab_test))
   end
 
@@ -45,6 +59,10 @@ defmodule ThamaniDawaWeb.LabTestLive.Index do
     |> assign(:field_defs_json, "{}")
     |> assign(:field_defs_error, nil)
     |> assign(:form, nil)
+  end
+
+  def handle_event("toggle_new_category", _params, socket) do
+    {:noreply, assign(socket, :use_new_category, not socket.assigns.use_new_category)}
   end
 
   def handle_event("validate", %{"lab_test" => attrs, "field_defs_json" => json}, socket) do
@@ -62,10 +80,21 @@ defmodule ThamaniDawaWeb.LabTestLive.Index do
      |> assign(:field_defs_error, json_error)}
   end
 
-  def handle_event("save", %{"lab_test" => attrs, "field_defs_json" => json}, socket) do
+  def handle_event("save", %{"lab_test" => attrs, "field_defs_json" => json} = params, socket) do
     case decode_field_defs(attrs, json) do
-      {merged_attrs, nil} -> save_lab_test(socket, socket.assigns.live_action, merged_attrs)
-      {_attrs, error} -> {:noreply, assign(socket, :field_defs_error, error)}
+      {merged_attrs, nil} ->
+        org_id = socket.assigns.current_scope.organization_id
+
+        case resolve_category(socket, org_id, merged_attrs, params) do
+          {:ok, attrs} ->
+            save_lab_test(socket, socket.assigns.live_action, attrs)
+
+          {:error, changeset} ->
+            {:noreply, assign(socket, :category_form, to_form(changeset, as: :category))}
+        end
+
+      {_attrs, error} ->
+        {:noreply, assign(socket, :field_defs_error, error)}
     end
   end
 
@@ -75,22 +104,35 @@ defmodule ThamaniDawaWeb.LabTestLive.Index do
 
     case LabTests.update_lab_test(org_id, lab_test, %{is_active: !lab_test.is_active}) do
       {:ok, updated} ->
-        {:noreply, stream_insert(socket, :lab_tests, updated)}
+        {:noreply, stream_insert(socket, :lab_tests, with_category(socket, updated))}
 
       {:error, _changeset} ->
         {:noreply, put_flash(socket, :error, "Could not update test.")}
     end
   end
 
+  defp resolve_category(%{assigns: %{use_new_category: true}}, organization_id, attrs, %{
+         "category" => category_attrs
+       }) do
+    case LabTests.create_lab_test_category(organization_id, category_attrs) do
+      {:ok, category} -> {:ok, Map.put(attrs, "category_id", category.id)}
+      {:error, changeset} -> {:error, changeset}
+    end
+  end
+
+  defp resolve_category(_socket, _organization_id, attrs, _params), do: {:ok, attrs}
+
   defp save_lab_test(socket, :new, attrs) do
     org_id = socket.assigns.current_scope.organization_id
 
     case LabTests.create_lab_test(org_id, attrs) do
       {:ok, lab_test} ->
+        socket = refresh_categories(socket, org_id)
+
         {:noreply,
          socket
          |> put_flash(:info, "Test created.")
-         |> stream_insert(:lab_tests, lab_test)
+         |> stream_insert(:lab_tests, with_category(socket, lab_test))
          |> push_patch(to: ~p"/lab/tests")}
 
       {:error, changeset} ->
@@ -103,15 +145,29 @@ defmodule ThamaniDawaWeb.LabTestLive.Index do
 
     case LabTests.update_lab_test(org_id, socket.assigns.lab_test, attrs) do
       {:ok, lab_test} ->
+        socket = refresh_categories(socket, org_id)
+
         {:noreply,
          socket
          |> put_flash(:info, "Test updated.")
-         |> stream_insert(:lab_tests, lab_test)
+         |> stream_insert(:lab_tests, with_category(socket, lab_test))
          |> push_patch(to: ~p"/lab/tests")}
 
       {:error, changeset} ->
         {:noreply, assign(socket, :form, to_form(changeset, as: :lab_test))}
     end
+  end
+
+  defp with_category(socket, lab_test) do
+    %{lab_test | category: socket.assigns.categories_by_id[lab_test.category_id]}
+  end
+
+  defp refresh_categories(socket, org_id) do
+    categories = LabTests.list_lab_test_categories(org_id)
+
+    socket
+    |> assign(:categories, Enum.map(categories, &{&1.name, &1.id}))
+    |> assign(:categories_by_id, Map.new(categories, &{&1.id, &1}))
   end
 
   defp decode_field_defs(attrs, json) do
@@ -120,6 +176,9 @@ defmodule ThamaniDawaWeb.LabTestLive.Index do
       {:error, _} -> {attrs, "must be valid JSON (e.g. {\"result\": {\"type\": \"number\"}})"}
     end
   end
+
+  defp category_name(%{category: nil}), do: "(unknown category)"
+  defp category_name(%{category: category}), do: category.name
 
   def render(assigns) do
     ~H"""
@@ -144,18 +203,33 @@ defmodule ThamaniDawaWeb.LabTestLive.Index do
         <.form for={@form} id="lab-test-form" phx-submit="save" phx-change="validate">
           <div class="grid grid-cols-2 gap-3 mb-3">
             <.input field={@form[:name]} label="Test name" required />
-            <.input
-              field={@form[:category]}
-              type="select"
-              label="Category"
-              options={LabTest.categories()}
-              prompt="Choose a category"
-              required
-            />
+
+            <div class="flex items-end gap-2">
+              <div class="flex-1">
+                <.input
+                  :if={not @use_new_category}
+                  field={@form[:category_id]}
+                  type="select"
+                  label="Category"
+                  options={@categories}
+                  prompt="Choose a category"
+                  required
+                />
+                <.input
+                  :if={@use_new_category}
+                  field={@category_form[:name]}
+                  label="New category name"
+                  required
+                />
+              </div>
+              <.button type="button" phx-click="toggle_new_category" class="mb-1">
+                {if @use_new_category, do: "Choose existing", else: "+ New category"}
+              </.button>
+            </div>
           </div>
 
           <div class="grid grid-cols-2 gap-3 mb-3">
-            <.input field={@form[:price]} type="number" label="Price" step="0.01" min="0" />
+            <.input field={@form[:price]} type="number" label="Price" step="0.01" min="0" required />
             <div class="flex items-end pb-1">
               <.input field={@form[:is_active]} type="checkbox" label="Active" />
             </div>
@@ -190,7 +264,7 @@ defmodule ThamaniDawaWeb.LabTestLive.Index do
 
       <.table id="lab-tests" rows={@streams.lab_tests}>
         <:col :let={{_id, test}} label="Name">{test.name}</:col>
-        <:col :let={{_id, test}} label="Category">{test.category}</:col>
+        <:col :let={{_id, test}} label="Category">{category_name(test)}</:col>
         <:col :let={{_id, test}} label="Price">{test.price && "KES #{test.price}"}</:col>
         <:col :let={{_id, test}} label="Status">
           <span
