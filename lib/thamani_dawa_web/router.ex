@@ -64,14 +64,17 @@ defmodule ThamaniDawaWeb.Router do
       live "/pharmacy/scan", PharmacyScanLive, :index
       live "/pharmacy/stock", PharmacyStockLive, :index
 
-      live "/pharmacy/receive-stock", ReceiveStockLive, :new
+      live "/pharmacy/receive-stock", ReceiveStockLive, :index
+      live "/pharmacy/receive-stock/:id/receive", ReceiveStockLive, :receive
 
-      live "/pharmacy/stock-take", PharmacyStockTakeLive, :index
-      live "/pharmacy/stock-take/:id", PharmacyStockTakeLive, :show
+      live "/pharmacy/stock-takes", StockTakeLive.Index, :index
+      live "/pharmacy/stock-takes/new", StockTakeLive.Index, :new
+      live "/pharmacy/stock-takes/:id", StockTakeLive.Show, :show
 
       live "/pharmacy/prescriptions", PrescriptionLive.Index, :index
       live "/pharmacy/prescriptions/new", PrescriptionLive.Index, :new
       live "/pharmacy/prescriptions/:id", PrescriptionLive.Show, :show
+      live "/pharmacy/prescriptions/:id/payments/new", PrescriptionLive.Show, :new_payment
     end
 
     live_session :lab, on_mount: [{ThamaniDawaWeb.UserAuth, :require_lab_access}] do
@@ -82,11 +85,10 @@ defmodule ThamaniDawaWeb.Router do
       live "/lab/orders/new", LabOrderLive.Index, :new
       live "/lab/orders/:id", LabOrderLive.Show, :show
       live "/lab/orders/:id/results/:result_id/edit", LabOrderLive.Show, :edit_result
+      live "/lab/orders/:id/payments/new", LabOrderLive.Show, :new_payment
 
-      live "/lab/receive-stock", LabReceiveStockLive, :new
-
-      live "/lab/stock-take", LabStockTakeLive, :index
-      live "/lab/stock-take/:id", LabStockTakeLive, :show
+      live "/lab/receive-stock", LabReceiveStockLive, :index
+      live "/lab/receive-stock/:id/receive", LabReceiveStockLive, :receive
 
       live "/lab/tests", LabTestLive.Index, :index
       live "/lab/tests/new", LabTestLive.Index, :new

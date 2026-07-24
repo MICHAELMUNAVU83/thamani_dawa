@@ -117,6 +117,19 @@ defmodule ThamaniDawaWeb.ProductLive.Index do
     end
   end
 
+  def handle_event("toggle_active", %{"id" => id}, socket) do
+    organization_id = socket.assigns.current_scope.organization_id
+    product = Products.get_product!(organization_id, id)
+
+    case Products.update_product(product, %{is_active: !product.is_active}) do
+      {:ok, _updated} ->
+        {:noreply, reload_products(socket)}
+
+      {:error, _changeset} ->
+        {:noreply, put_flash(socket, :error, "Could not update product.")}
+    end
+  end
+
   def handle_async(:gtin_lookup, {:ok, {:ok, prefill}}, socket) do
     {:noreply,
      socket
@@ -132,18 +145,6 @@ defmodule ThamaniDawaWeb.ProductLive.Index do
     {:noreply, assign(socket, :gtin_lookup, {:error, :provider_error})}
   end
 
-  def handle_event("toggle_active", %{"id" => id}, socket) do
-    organization_id = socket.assigns.current_scope.organization_id
-    product = Products.get_product!(organization_id, id)
-
-    case Products.update_product(product, %{is_active: !product.is_active}) do
-      {:ok, _updated} ->
-        {:noreply, reload_products(socket)}
-
-      {:error, _changeset} ->
-        {:noreply, put_flash(socket, :error, "Could not update product.")}
-    end
-  end
   defp save_product(socket, :new, attrs) do
     organization_id = socket.assigns.current_scope.organization_id
 

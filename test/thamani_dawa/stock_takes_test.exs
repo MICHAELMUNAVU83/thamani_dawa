@@ -4,6 +4,7 @@ defmodule ThamaniDawa.StockTakesTest do
   alias ThamaniDawa.Batches
   alias ThamaniDawa.StockTakes
   alias ThamaniDawa.StockTakes.StockTake
+  alias ThamaniDawa.StockTakes.StockTakeItem
 
   import ThamaniDawa.AccountsFixtures
   import ThamaniDawa.BatchesFixtures
@@ -11,291 +12,262 @@ defmodule ThamaniDawa.StockTakesTest do
   import ThamaniDawa.SitesFixtures
   import ThamaniDawa.StockTakesFixtures
 
-  describe "start_stock_take/4" do
-    test "creates a draft stock take with one entry per active batch at the site" do
-      organization = organization_fixture()
-      site = site_fixture(%{organization_id: organization.id})
-      user = user_fixture(%{organization_id: organization.id})
+  describe "create_stock_take/2" do
+    test "creates a draft stock take with valid attributes" do
+      org = organization_fixture()
+      site = site_fixture(%{organization_id: org.id})
+      user = user_fixture(%{organization_id: org.id})
 
-      active =
-        batch_fixture(%{organization_id: organization.id, site_id: site.id, quantity: 40})
+      assert {:ok, %StockTake{} = take} =
+               StockTakes.create_stock_take(org.id, %{
+                 site_id: site.id,
+                 started_by_id: user.id,
+                 notes: "Q1 count"
+               })
 
-      assert {:ok, stock_take} =
-               StockTakes.start_stock_take(organization.id, site.id, user.id)
-
-      assert stock_take.status == :draft
-      assert stock_take.site_id == site.id
-      assert stock_take.started_by_id == user.id
-
-      [entry] = StockTakes.get_stock_take!(organization.id, stock_take.id).entries
-      assert entry.batch_id == active.id
-      assert entry.expected_quantity == 40
-      assert is_nil(entry.counted_quantity)
+      assert take.organization_id == org.id
+      assert take.site_id == site.id
+      assert take.started_by_id == user.id
+      assert take.status == :draft
+      assert take.notes == "Q1 count"
+      assert is_nil(take.finalized_at)
+      assert is_nil(take.finalized_by_id)
     end
 
-    test "excludes pending (not yet received) batches" do
-      organization = organization_fixture()
-      site = site_fixture(%{organization_id: organization.id})
-      user = user_fixture(%{organization_id: organization.id})
+    test "requires site_id and started_by_id" do
+      org = organization_fixture()
 
-      batch_fixture(%{organization_id: organization.id, site_id: site.id, pending: true})
+      assert {:error, changeset} = StockTakes.create_stock_take(org.id, %{})
 
-      assert {:ok, stock_take} = StockTakes.start_stock_take(organization.id, site.id, user.id)
-      assert StockTakes.get_stock_take!(organization.id, stock_take.id).entries == []
+      assert %{site_id: ["can't be blank"], started_by_id: ["can't be blank"]} =
+               errors_on(changeset)
     end
 
-    test "excludes depleted batches (zero remaining quantity)" do
-      organization = organization_fixture()
-      site = site_fixture(%{organization_id: organization.id})
-      user = user_fixture(%{organization_id: organization.id})
+    test "notes is optional" do
+      org = organization_fixture()
+      site = site_fixture(%{organization_id: org.id})
+      user = user_fixture(%{organization_id: org.id})
 
-      depleted =
-        batch_fixture(%{organization_id: organization.id, site_id: site.id, quantity: 5})
-
-      {:ok, _} = Batches.decrement_remaining_quantity(depleted, 5)
-
-      assert {:ok, stock_take} = StockTakes.start_stock_take(organization.id, site.id, user.id)
-      assert StockTakes.get_stock_take!(organization.id, stock_take.id).entries == []
-    end
-
-    test "fails when the site already has a stock take in progress" do
-      organization = organization_fixture()
-      site = site_fixture(%{organization_id: organization.id})
-      user = user_fixture(%{organization_id: organization.id})
-
-      assert {:ok, _first} = StockTakes.start_stock_take(organization.id, site.id, user.id)
-
-      assert {:error, changeset} =
-               StockTakes.start_stock_take(organization.id, site.id, user.id)
-
-      assert %{organization_id: ["already has a stock take in progress"]} = errors_on(changeset)
-    end
-
-    test "allows a new stock take once the previous one at the site is completed" do
-      organization = organization_fixture()
-      site = site_fixture(%{organization_id: organization.id})
-      user = user_fixture(%{organization_id: organization.id})
-
-      assert {:ok, first} = StockTakes.start_stock_take(organization.id, site.id, user.id)
-
-      assert {:ok, _completed, _summary} =
-               StockTakes.finalize_stock_take(organization.id, first.id, user.id)
-
-      assert {:ok, second} = StockTakes.start_stock_take(organization.id, site.id, user.id)
-      assert second.id != first.id
-    end
-
-    test "a different site in the same organization can have its own concurrent draft" do
-      organization = organization_fixture()
-      site_a = site_fixture(%{organization_id: organization.id})
-      site_b = site_fixture(%{organization_id: organization.id})
-      user = user_fixture(%{organization_id: organization.id})
-
-      assert {:ok, _} = StockTakes.start_stock_take(organization.id, site_a.id, user.id)
-      assert {:ok, _} = StockTakes.start_stock_take(organization.id, site_b.id, user.id)
+      assert {:ok, %StockTake{notes: nil}} =
+               StockTakes.create_stock_take(org.id, %{
+                 site_id: site.id,
+                 started_by_id: user.id
+               })
     end
   end
 
-  describe "get_active_stock_take/2" do
-    test "returns the site's in-progress stock take" do
-      organization = organization_fixture()
-      site = site_fixture(%{organization_id: organization.id})
-      stock_take = stock_take_fixture(%{organization_id: organization.id, site_id: site.id})
+  describe "list_stock_takes_for_site/2" do
+    test "returns stock takes only for the given site" do
+      org = organization_fixture()
+      site_a = site_fixture(%{organization_id: org.id})
+      site_b = site_fixture(%{organization_id: org.id})
+      user = user_fixture(%{organization_id: org.id})
 
-      assert %StockTake{id: id} = StockTakes.get_active_stock_take(organization.id, site.id)
-      assert id == stock_take.id
+      {:ok, take_a} =
+        StockTakes.create_stock_take(org.id, %{site_id: site_a.id, started_by_id: user.id})
+
+      _take_b =
+        stock_take_fixture(%{organization_id: org.id, site_id: site_b.id, started_by_id: user.id})
+
+      result = StockTakes.list_stock_takes_for_site(org.id, site_a.id)
+      assert [%StockTake{id: id}] = result
+      assert id == take_a.id
     end
 
-    test "returns nil when the site has none in progress" do
-      organization = organization_fixture()
-      site = site_fixture(%{organization_id: organization.id})
+    test "does not cross organization boundaries" do
+      org_a = organization_fixture()
+      org_b = organization_fixture()
+      site_a = site_fixture(%{organization_id: org_a.id})
+      user_a = user_fixture(%{organization_id: org_a.id})
 
-      assert StockTakes.get_active_stock_take(organization.id, site.id) == nil
-    end
+      {:ok, _take} =
+        StockTakes.create_stock_take(org_a.id, %{site_id: site_a.id, started_by_id: user_a.id})
 
-    test "returns nil once the stock take is completed" do
-      organization = organization_fixture()
-      site = site_fixture(%{organization_id: organization.id})
-      user = user_fixture(%{organization_id: organization.id})
-
-      stock_take = stock_take_fixture(%{organization_id: organization.id, site_id: site.id})
-      {:ok, _, _} = StockTakes.finalize_stock_take(organization.id, stock_take.id, user.id)
-
-      assert StockTakes.get_active_stock_take(organization.id, site.id) == nil
+      assert [] = StockTakes.list_stock_takes_for_site(org_b.id, site_a.id)
     end
   end
 
-  describe "get_stock_take!/2" do
-    test "raises when the stock take belongs to a different organization" do
-      other_organization = organization_fixture()
-      stock_take = stock_take_fixture()
+  describe "add_item/2" do
+    test "adds a batch to a draft stock take, snapshotting remaining_quantity" do
+      org = organization_fixture()
+      take = stock_take_fixture(%{organization_id: org.id})
+      batch = batch_fixture(%{organization_id: org.id, quantity: 40})
 
-      assert_raise Ecto.NoResultsError, fn ->
-        StockTakes.get_stock_take!(other_organization.id, stock_take.id)
-      end
+      assert {:ok, %StockTakeItem{} = item} = StockTakes.add_item(take, batch)
+      assert item.stock_take_id == take.id
+      assert item.batch_id == batch.id
+      assert item.expected_quantity == batch.remaining_quantity
+      assert is_nil(item.counted_quantity)
+      assert is_nil(item.variance)
+    end
+
+    test "rejects adding the same batch twice" do
+      org = organization_fixture()
+      take = stock_take_fixture(%{organization_id: org.id})
+      batch = batch_fixture(%{organization_id: org.id})
+
+      {:ok, _item} = StockTakes.add_item(take, batch)
+      assert {:error, changeset} = StockTakes.add_item(take, batch)
+
+      assert %{batch_id: ["this batch is already included in the stock take"]} =
+               errors_on(changeset)
+    end
+
+    test "returns :already_finalized for a finalized session" do
+      org = organization_fixture()
+      user = user_fixture(%{organization_id: org.id})
+      %StockTake{} = take = stock_take_fixture(%{organization_id: org.id, started_by_id: user.id})
+
+      finalized_take = %StockTake{take | status: :finalized}
+      batch = batch_fixture(%{organization_id: org.id})
+
+      assert {:error, :already_finalized} = StockTakes.add_item(finalized_take, batch)
     end
   end
 
   describe "record_count/4" do
-    test "records the counted quantity and computes variance" do
-      organization = organization_fixture()
-      site = site_fixture(%{organization_id: organization.id})
-      user = user_fixture(%{organization_id: organization.id})
-      batch_fixture(%{organization_id: organization.id, site_id: site.id, quantity: 40})
+    test "records a physical count, computes variance, stamps counter and timestamp" do
+      org = organization_fixture()
+      user = user_fixture(%{organization_id: org.id})
+      take = stock_take_fixture(%{organization_id: org.id})
+      batch = batch_fixture(%{organization_id: org.id, quantity: 50})
+      {:ok, item} = StockTakes.add_item(take, batch)
 
-      stock_take = stock_take_fixture(%{organization_id: organization.id, site_id: site.id})
-      [entry] = stock_take.entries
-
-      assert {:ok, updated} =
-               StockTakes.record_count(organization.id, entry.id, user.id, %{
-                 "counted_quantity" => "35"
-               })
-
-      assert updated.counted_quantity == 35
-      assert updated.variance == -5
-      assert updated.counted_by_id == user.id
+      assert {:ok, %StockTakeItem{} = counted} = StockTakes.record_count(item, 45, user.id)
+      assert counted.counted_quantity == 45
+      assert counted.variance == 45 - item.expected_quantity
+      assert counted.counted_by_id == user.id
+      assert not is_nil(counted.counted_at)
     end
 
-    test "rejects a negative counted quantity" do
-      organization = organization_fixture()
-      site = site_fixture(%{organization_id: organization.id})
-      user = user_fixture(%{organization_id: organization.id})
-      batch_fixture(%{organization_id: organization.id, site_id: site.id})
+    test "rejects negative counted_quantity" do
+      org = organization_fixture()
+      user = user_fixture(%{organization_id: org.id})
+      take = stock_take_fixture(%{organization_id: org.id})
+      batch = batch_fixture(%{organization_id: org.id})
+      {:ok, item} = StockTakes.add_item(take, batch)
 
-      stock_take = stock_take_fixture(%{organization_id: organization.id, site_id: site.id})
-      [entry] = stock_take.entries
-
-      assert {:error, changeset} =
-               StockTakes.record_count(organization.id, entry.id, user.id, %{
-                 "counted_quantity" => "-1"
-               })
-
-      assert %{counted_quantity: ["must be greater than or equal to 0"]} = errors_on(changeset)
+      assert {:error, changeset} = StockTakes.record_count(item, -1, user.id)
+      assert %{counted_quantity: [_]} = errors_on(changeset)
     end
 
-    test "returns :not_draft once the stock take is finalized" do
-      organization = organization_fixture()
-      site = site_fixture(%{organization_id: organization.id})
-      user = user_fixture(%{organization_id: organization.id})
-      batch_fixture(%{organization_id: organization.id, site_id: site.id})
+    test "accepts a counted_quantity of zero" do
+      org = organization_fixture()
+      user = user_fixture(%{organization_id: org.id})
+      take = stock_take_fixture(%{organization_id: org.id})
+      batch = batch_fixture(%{organization_id: org.id, quantity: 10})
+      {:ok, item} = StockTakes.add_item(take, batch)
 
-      stock_take = stock_take_fixture(%{organization_id: organization.id, site_id: site.id})
-      [entry] = stock_take.entries
+      assert {:ok, counted} = StockTakes.record_count(item, 0, user.id)
+      assert counted.counted_quantity == 0
+      assert counted.variance == -item.expected_quantity
+    end
 
-      {:ok, _, _} = StockTakes.finalize_stock_take(organization.id, stock_take.id, user.id)
+    test "returns :already_finalized when parent session is finalized" do
+      org = organization_fixture()
+      user = user_fixture(%{organization_id: org.id})
+      take = stock_take_fixture(%{organization_id: org.id})
+      batch = batch_fixture(%{organization_id: org.id})
+      {:ok, item} = StockTakes.add_item(take, batch)
 
-      assert {:error, :not_draft} =
-               StockTakes.record_count(organization.id, entry.id, user.id, %{
-                 "counted_quantity" => "10"
-               })
+      # Finalize by patching status directly to avoid needing a fully-counted session
+      Repo.update!(Ecto.Changeset.change(take, status: :finalized))
+
+      assert {:error, :already_finalized} = StockTakes.record_count(item, 5, user.id)
     end
   end
 
   describe "finalize_stock_take/3" do
-    test "applies a counted entry to the batch's remaining_quantity" do
-      organization = organization_fixture()
-      site = site_fixture(%{organization_id: organization.id})
-      user = user_fixture(%{organization_id: organization.id})
-      batch = batch_fixture(%{organization_id: organization.id, site_id: site.id, quantity: 40})
+    test "sets batch remaining_quantity to counted_quantity for each item" do
+      org = organization_fixture()
+      user = user_fixture(%{organization_id: org.id})
+      take = stock_take_fixture(%{organization_id: org.id, started_by_id: user.id})
+      batch = batch_fixture(%{organization_id: org.id, quantity: 100})
+      {:ok, item} = StockTakes.add_item(take, batch)
+      {:ok, _counted} = StockTakes.record_count(item, 73, user.id)
 
-      stock_take = stock_take_fixture(%{organization_id: organization.id, site_id: site.id})
-      [entry] = stock_take.entries
+      assert {:ok, %StockTake{status: :finalized} = finalized} =
+               StockTakes.finalize_stock_take(take, user.id)
 
-      {:ok, _} =
-        StockTakes.record_count(organization.id, entry.id, user.id, %{
-          "counted_quantity" => "33"
-        })
+      assert finalized.finalized_by_id == user.id
+      assert not is_nil(finalized.finalized_at)
 
-      assert {:ok, completed, %{applied: applied, conflicted: []}} =
-               StockTakes.finalize_stock_take(organization.id, stock_take.id, user.id)
-
-      assert completed.status == :completed
-      assert completed.completed_by_id == user.id
-      assert applied == [entry.id]
-
-      assert Batches.get_batch!(organization.id, batch.id).remaining_quantity == 33
+      updated_batch = Batches.get_batch!(org.id, batch.id)
+      assert updated_batch.remaining_quantity == 73
     end
 
-    test "leaves an uncounted entry's batch untouched" do
-      organization = organization_fixture()
-      site = site_fixture(%{organization_id: organization.id})
-      user = user_fixture(%{organization_id: organization.id})
-      batch = batch_fixture(%{organization_id: organization.id, site_id: site.id, quantity: 40})
+    test "blocks finalization when any item has no count" do
+      org = organization_fixture()
+      user = user_fixture(%{organization_id: org.id})
+      take = stock_take_fixture(%{organization_id: org.id, started_by_id: user.id})
+      batch = batch_fixture(%{organization_id: org.id})
+      {:ok, _item} = StockTakes.add_item(take, batch)
 
-      stock_take = stock_take_fixture(%{organization_id: organization.id, site_id: site.id})
-
-      assert {:ok, _completed, %{applied: [], conflicted: []}} =
-               StockTakes.finalize_stock_take(organization.id, stock_take.id, user.id)
-
-      assert Batches.get_batch!(organization.id, batch.id).remaining_quantity == 40
+      # item is un-counted
+      assert {:error, :uncounted_items} = StockTakes.finalize_stock_take(take, user.id)
     end
 
-    test "flags a conflict instead of overwriting when the batch changed mid-count" do
-      organization = organization_fixture()
-      site = site_fixture(%{organization_id: organization.id})
-      user = user_fixture(%{organization_id: organization.id})
-      batch = batch_fixture(%{organization_id: organization.id, site_id: site.id, quantity: 40})
+    test "returns :already_finalized on a second call (concurrent-safety)" do
+      org = organization_fixture()
+      user = user_fixture(%{organization_id: org.id})
+      take = stock_take_fixture(%{organization_id: org.id, started_by_id: user.id})
+      batch = batch_fixture(%{organization_id: org.id, quantity: 20})
+      {:ok, item} = StockTakes.add_item(take, batch)
+      {:ok, _counted} = StockTakes.record_count(item, 20, user.id)
 
-      stock_take = stock_take_fixture(%{organization_id: organization.id, site_id: site.id})
-      [entry] = stock_take.entries
-
-      {:ok, _} =
-        StockTakes.record_count(organization.id, entry.id, user.id, %{
-          "counted_quantity" => "33"
-        })
-
-      # Something else (e.g. a dispense) changes the batch after it was counted.
-      {:ok, _} = Batches.decrement_remaining_quantity(batch, 10)
-
-      assert {:ok, completed, %{applied: [], conflicted: conflicted}} =
-               StockTakes.finalize_stock_take(organization.id, stock_take.id, user.id)
-
-      assert completed.status == :completed
-      assert conflicted == [entry.id]
-
-      # The intervening dispense is preserved, not clobbered by the stale count.
-      assert Batches.get_batch!(organization.id, batch.id).remaining_quantity == 30
-
-      [reloaded_entry] = StockTakes.get_stock_take!(organization.id, stock_take.id).entries
-      refute reloaded_entry.has_been_applied
+      assert {:ok, _finalized} = StockTakes.finalize_stock_take(take, user.id)
+      assert {:error, :already_finalized} = StockTakes.finalize_stock_take(take, user.id)
     end
 
-    test "returns :not_draft when finalizing an already-completed stock take" do
-      organization = organization_fixture()
-      site = site_fixture(%{organization_id: organization.id})
-      user = user_fixture(%{organization_id: organization.id})
+    test "finalizes a take with no items (empty session is valid)" do
+      org = organization_fixture()
+      user = user_fixture(%{organization_id: org.id})
+      take = stock_take_fixture(%{organization_id: org.id, started_by_id: user.id})
 
-      stock_take = stock_take_fixture(%{organization_id: organization.id, site_id: site.id})
-      {:ok, _, _} = StockTakes.finalize_stock_take(organization.id, stock_take.id, user.id)
+      assert {:ok, %StockTake{status: :finalized}} = StockTakes.finalize_stock_take(take, user.id)
+    end
 
-      assert {:error, :not_draft} =
-               StockTakes.finalize_stock_take(organization.id, stock_take.id, user.id)
+    test "handles multiple batches — all are reconciled" do
+      org = organization_fixture()
+      user = user_fixture(%{organization_id: org.id})
+      take = stock_take_fixture(%{organization_id: org.id, started_by_id: user.id})
+
+      batch_a = batch_fixture(%{organization_id: org.id, quantity: 100})
+      batch_b = batch_fixture(%{organization_id: org.id, quantity: 50})
+
+      {:ok, item_a} = StockTakes.add_item(take, batch_a)
+      {:ok, item_b} = StockTakes.add_item(take, batch_b)
+      {:ok, _} = StockTakes.record_count(item_a, 90, user.id)
+      {:ok, _} = StockTakes.record_count(item_b, 55, user.id)
+
+      assert {:ok, _finalized} = StockTakes.finalize_stock_take(take, user.id)
+
+      assert Batches.get_batch!(org.id, batch_a.id).remaining_quantity == 90
+      assert Batches.get_batch!(org.id, batch_b.id).remaining_quantity == 55
     end
   end
 
-  describe "StockTake.statuses/0" do
-    test "lists the valid statuses" do
-      assert StockTake.statuses() == [:draft, :completed]
+  describe "get_stock_take!/2" do
+    test "preloads items with their batches" do
+      org = organization_fixture()
+      user = user_fixture(%{organization_id: org.id})
+      take = stock_take_fixture(%{organization_id: org.id, started_by_id: user.id})
+      batch = batch_fixture(%{organization_id: org.id, quantity: 30})
+      {:ok, _item} = StockTakes.add_item(take, batch)
+
+      loaded = StockTakes.get_stock_take!(org.id, take.id)
+      assert [%StockTakeItem{batch: %{id: batch_id}}] = loaded.items
+      assert batch_id == batch.id
     end
-  end
 
-  describe "record_count/4 with a blank quantity" do
-    test "is invalid and leaves variance unset" do
-      organization = organization_fixture()
-      site = site_fixture(%{organization_id: organization.id})
-      user = user_fixture(%{organization_id: organization.id})
-      batch_fixture(%{organization_id: organization.id, site_id: site.id, quantity: 40})
+    test "raises for a stock take belonging to another organization" do
+      org_a = organization_fixture()
+      org_b = organization_fixture()
+      take = stock_take_fixture(%{organization_id: org_a.id})
 
-      stock_take = stock_take_fixture(%{organization_id: organization.id, site_id: site.id})
-      [entry] = stock_take.entries
-
-      assert {:error, changeset} =
-               StockTakes.record_count(organization.id, entry.id, user.id, %{
-                 "counted_quantity" => ""
-               })
-
-      assert %{counted_quantity: ["can't be blank"]} = errors_on(changeset)
-      assert is_nil(Ecto.Changeset.get_change(changeset, :variance))
+      assert_raise Ecto.NoResultsError, fn ->
+        StockTakes.get_stock_take!(org_b.id, take.id)
+      end
     end
   end
 end

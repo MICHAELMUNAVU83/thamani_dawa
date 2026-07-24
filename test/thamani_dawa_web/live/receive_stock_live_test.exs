@@ -34,7 +34,7 @@ defmodule ThamaniDawaWeb.ReceiveStockLiveTest do
       {:ok, lv, html} = live(log_in_user(conn, pharmacist), ~p"/pharmacy/receive-stock")
 
       assert html =~ "LOT-HERE"
-      assert has_element?(lv, "#receive-batch-#{batch.id}")
+      assert has_element?(lv, "#pending_batches-#{batch.id}")
     end
 
     test "does not show a batch dispatched to a different site", %{conn: conn} do
@@ -104,8 +104,8 @@ defmodule ThamaniDawaWeb.ReceiveStockLiveTest do
     end
   end
 
-  describe "manual receipt" do
-    test "receiving a pending batch approves it and removes it from the list", %{conn: conn} do
+  describe "receive modal" do
+    test "Receive link opens the modal for that batch", %{conn: conn} do
       organization = organization_fixture()
       site = site_fixture(%{organization_id: organization.id})
       product = product_fixture(%{organization_id: organization.id, site_id: site.id})
@@ -116,23 +116,52 @@ defmodule ThamaniDawaWeb.ReceiveStockLiveTest do
           organization_id: organization.id,
           site_id: site.id,
           product_id: product.id,
-          batch_no: "LOT-MANUAL",
-          quantity: 100,
+          batch_no: "LOT-MODAL",
+          quantity: 50,
           pending: true
         })
 
       {:ok, lv, _html} = live(log_in_user(conn, pharmacist), ~p"/pharmacy/receive-stock")
 
-      assert has_element?(
-               lv,
-               "#receive-batch-#{batch.id} button[phx-disable-with='Receiving...']"
-             )
+      refute has_element?(lv, "#receive-batch-modal")
+
+      {:ok, lv, _html} =
+        live(
+          log_in_user(conn, pharmacist),
+          ~p"/pharmacy/receive-stock/#{batch.id}/receive"
+        )
+
+      assert has_element?(lv, "#receive-batch-modal")
+      assert render(lv) =~ "LOT-MODAL"
+    end
+
+    test "confirming receipt approves the batch and closes the modal", %{conn: conn} do
+      organization = organization_fixture()
+      site = site_fixture(%{organization_id: organization.id})
+      product = product_fixture(%{organization_id: organization.id, site_id: site.id})
+      pharmacist = pharmacist_at_site(organization, site)
+
+      batch =
+        batch_fixture(%{
+          organization_id: organization.id,
+          site_id: site.id,
+          product_id: product.id,
+          batch_no: "LOT-CONFIRM",
+          quantity: 100,
+          pending: true
+        })
+
+      {:ok, lv, _html} =
+        live(
+          log_in_user(conn, pharmacist),
+          ~p"/pharmacy/receive-stock/#{batch.id}/receive"
+        )
 
       lv
-      |> form("#receive-batch-#{batch.id}", %{"quantity" => "100"})
+      |> form("#receive-batch-form", receive: %{quantity: "100"})
       |> render_submit()
 
-      refute has_element?(lv, "#receive-batch-#{batch.id}")
+      assert_patch(lv, ~p"/pharmacy/receive-stock")
       assert render(lv) =~ "Stock received."
 
       received = Batches.get_batch!(organization.id, batch.id)
@@ -158,10 +187,14 @@ defmodule ThamaniDawaWeb.ReceiveStockLiveTest do
           pending: true
         })
 
-      {:ok, lv, _html} = live(log_in_user(conn, pharmacist), ~p"/pharmacy/receive-stock")
+      {:ok, lv, _html} =
+        live(
+          log_in_user(conn, pharmacist),
+          ~p"/pharmacy/receive-stock/#{batch.id}/receive"
+        )
 
       lv
-      |> form("#receive-batch-#{batch.id}", %{"quantity" => "80"})
+      |> form("#receive-batch-form", receive: %{quantity: "80"})
       |> render_submit()
 
       received = Batches.get_batch!(organization.id, batch.id)
@@ -169,7 +202,7 @@ defmodule ThamaniDawaWeb.ReceiveStockLiveTest do
       assert received.remaining_quantity == 80
     end
 
-    test "a non-numeric quantity shows a validation error", %{conn: conn} do
+    test "cancelling the modal patches back to the list", %{conn: conn} do
       organization = organization_fixture()
       site = site_fixture(%{organization_id: organization.id})
       product = product_fixture(%{organization_id: organization.id, site_id: site.id})
@@ -180,22 +213,26 @@ defmodule ThamaniDawaWeb.ReceiveStockLiveTest do
           organization_id: organization.id,
           site_id: site.id,
           product_id: product.id,
-          batch_no: "LOT-BAD-QTY",
-          quantity: 100,
+          batch_no: "LOT-CANCEL",
+          quantity: 10,
           pending: true
         })
 
-      {:ok, lv, _html} = live(log_in_user(conn, pharmacist), ~p"/pharmacy/receive-stock")
+      {:ok, lv, _html} =
+        live(
+          log_in_user(conn, pharmacist),
+          ~p"/pharmacy/receive-stock/#{batch.id}/receive"
+        )
 
-      lv
-      |> form("#receive-batch-#{batch.id}", %{"quantity" => "abc"})
-      |> render_submit()
+      assert has_element?(lv, "#receive-batch-modal")
 
-      assert render(lv) =~ "Enter a valid quantity."
-      assert has_element?(lv, "#receive-batch-#{batch.id}")
+      lv |> element("#receive-batch-modal a", "Cancel") |> render_click()
+
+      assert_patch(lv, ~p"/pharmacy/receive-stock")
+      refute has_element?(lv, "#receive-batch-modal")
     end
 
-    test "a negative quantity fails validation and is not received", %{conn: conn} do
+    test "a negative quantity fails validation and the batch stays unreceived", %{conn: conn} do
       organization = organization_fixture()
       site = site_fixture(%{organization_id: organization.id})
       product = product_fixture(%{organization_id: organization.id, site_id: site.id})
@@ -206,22 +243,23 @@ defmodule ThamaniDawaWeb.ReceiveStockLiveTest do
           organization_id: organization.id,
           site_id: site.id,
           product_id: product.id,
-          batch_no: "LOT-NEGATIVE-QTY",
-          quantity: 100,
+          batch_no: "LOT-NEG",
+          quantity: 10,
           pending: true
         })
 
-      {:ok, lv, _html} = live(log_in_user(conn, pharmacist), ~p"/pharmacy/receive-stock")
+      {:ok, lv, _html} =
+        live(
+          log_in_user(conn, pharmacist),
+          ~p"/pharmacy/receive-stock/#{batch.id}/receive"
+        )
 
       lv
-      |> form("#receive-batch-#{batch.id}", %{"quantity" => "-5"})
+      |> form("#receive-batch-form", receive: %{quantity: "-5"})
       |> render_submit()
 
       assert render(lv) =~ "Couldn&#39;t receive that batch."
-      assert has_element?(lv, "#receive-batch-#{batch.id}")
-
-      unreceived = Batches.get_batch!(organization.id, batch.id)
-      assert is_nil(unreceived.approver_id)
+      assert is_nil(Batches.get_batch!(organization.id, batch.id).approver_id)
     end
   end
 
@@ -251,7 +289,7 @@ defmodule ThamaniDawaWeb.ReceiveStockLiveTest do
       |> form("#receive-stock-gs1-form", raw_gs1: "01" <> gtin <> "10" <> "LOT-GS1")
       |> render_submit()
 
-      refute has_element?(lv, "#receive-batch-#{batch.id}")
+      refute has_element?(lv, "#pending_batches-#{batch.id}")
       assert render(lv) =~ "Stock received."
 
       received = Batches.get_batch!(organization.id, batch.id)

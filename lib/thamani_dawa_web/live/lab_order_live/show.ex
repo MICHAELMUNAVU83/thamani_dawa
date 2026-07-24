@@ -5,6 +5,9 @@ defmodule ThamaniDawaWeb.LabOrderLive.Show do
   alias ThamaniDawa.LabTests
   alias ThamaniDawa.Patients
   alias ThamaniDawa.PatientVisits
+  alias ThamaniDawa.PaymentMethods
+  alias ThamaniDawa.Payments
+  alias ThamaniDawa.Payments.Payment
 
   @sample_types [{"Blood", :blood}, {"Urine", :urine}, {"Stool", :stool}, {"Swab", :swab}]
 
@@ -18,6 +21,7 @@ defmodule ThamaniDawaWeb.LabOrderLive.Show do
       |> assign(:collecting_result_id, nil)
       |> assign(:editing_result, nil)
       |> assign(:editing_lab_test, nil)
+      |> assign(:payment_form, nil)
       |> load_lab_order(id)
 
     {:ok, socket}
@@ -37,12 +41,29 @@ defmodule ThamaniDawaWeb.LabOrderLive.Show do
     socket
     |> assign(:editing_result, result)
     |> assign(:editing_lab_test, lab_test)
+    |> assign(:payment_form, nil)
+  end
+
+  defp apply_action(socket, :new_payment, _params) do
+    lab_order = socket.assigns.lab_order
+
+    changeset =
+      Payment.changeset(%Payment{}, %{
+        "lab_order_id" => lab_order.id,
+        "amount" => lab_order.total_amount
+      })
+
+    socket
+    |> assign(:editing_result, nil)
+    |> assign(:editing_lab_test, nil)
+    |> assign(:payment_form, to_form(changeset, as: :payment))
   end
 
   defp apply_action(socket, _action, _params) do
     socket
     |> assign(:editing_result, nil)
     |> assign(:editing_lab_test, nil)
+    |> assign(:payment_form, nil)
   end
 
   defp load_lab_order(socket, id) do
@@ -82,6 +103,39 @@ defmodule ThamaniDawaWeb.LabOrderLive.Show do
 
       {:error, _} ->
         {:noreply, put_flash(socket, :error, "Could not record sample collection.")}
+    end
+  end
+
+  def handle_event("validate_payment", %{"payment" => attrs}, socket) do
+    lab_order = socket.assigns.lab_order
+
+    changeset =
+      attrs
+      |> Map.put("lab_order_id", lab_order.id)
+      |> then(&Payment.changeset(%Payment{}, &1))
+      |> Map.put(:action, :validate)
+
+    {:noreply, assign(socket, payment_form: to_form(changeset, as: :payment))}
+  end
+
+  def handle_event("save_payment", %{"payment" => attrs}, socket) do
+    organization_id = socket.assigns.current_scope.organization_id
+    lab_order = socket.assigns.lab_order
+
+    attrs = Map.put(attrs, "lab_order_id", lab_order.id)
+
+    with {:ok, payment} <- Payments.create_payment(organization_id, attrs),
+         {:ok, _completed} <- Payments.complete_payment(payment) do
+      {:noreply,
+       socket
+       |> put_flash(:info, "Payment recorded and completed.")
+       |> push_patch(to: ~p"/lab/orders/#{lab_order.id}")}
+    else
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:noreply, assign(socket, payment_form: to_form(changeset, as: :payment))}
+
+      {:error, _reason} ->
+        {:noreply, put_flash(socket, :error, "Payment saved but could not be completed.")}
     end
   end
 
@@ -199,6 +253,46 @@ defmodule ThamaniDawaWeb.LabOrderLive.Show do
   def render(assigns) do
     ~H"""
     <Layouts.lab_shell flash={@flash} current_scope={@current_scope} current_path={~p"/lab/orders"}>
+      <.modal
+        :if={@live_action == :new_payment}
+        id="payment-modal"
+        show
+        on_cancel={JS.patch(~p"/lab/orders/#{@lab_order.id}")}
+      >
+        <h2 class="mb-1 font-semibold text-slate-900">Record payment</h2>
+        <p class="mb-4 text-sm text-thamani-pewter">
+          Record and immediately complete a payment for this lab order.
+        </p>
+        <.form
+          for={@payment_form}
+          id="payment-form"
+          phx-submit="save_payment"
+          phx-change="validate_payment"
+        >
+          <.input
+            field={@payment_form[:payment_type]}
+            type="select"
+            label="Payment method"
+            options={PaymentMethods.all()}
+            prompt="Choose a method"
+            required
+          />
+          <.input
+            field={@payment_form[:amount]}
+            type="number"
+            label="Amount (KES)"
+            step="0.01"
+            min="0.01"
+            required
+          />
+          <.input field={@payment_form[:provider_reference]} label="Reference / receipt no." />
+          <div class="mt-4 flex gap-2">
+            <.button variant="primary" phx-disable-with="Saving…">Record payment</.button>
+            <.button patch={~p"/lab/orders/#{@lab_order.id}"}>Cancel</.button>
+          </div>
+        </.form>
+      </.modal>
+
       <.header>
         <div class="flex flex-wrap items-center gap-3">
           <span>{@patient.full_name}</span>
@@ -208,6 +302,14 @@ defmodule ThamaniDawaWeb.LabOrderLive.Show do
           Lab order #{@lab_order.id} · {Phoenix.Naming.humanize(@lab_order.urgency || "routine")}
         </:subtitle>
         <:actions>
+          <.button
+            :if={not @lab_order.has_paid}
+            variant="primary"
+            patch={~p"/lab/orders/#{@lab_order.id}/payments/new"}
+            class="gap-2"
+          >
+            <.icon name="hero-banknotes" class="size-4" /> Record payment
+          </.button>
           <.button navigate={~p"/lab/orders"}>Back to orders</.button>
         </:actions>
       </.header>

@@ -3,10 +3,33 @@ defmodule ThamaniDawaWeb.PrescriptionLive.Show do
 
   alias ThamaniDawa.Patients
   alias ThamaniDawa.Patients.Patient
+  alias ThamaniDawa.PaymentMethods
+  alias ThamaniDawa.Payments
+  alias ThamaniDawa.Payments.Payment
   alias ThamaniDawa.Prescriptions
 
   def mount(%{"id" => id}, _session, socket) do
-    {:ok, load_prescription(socket, id)}
+    {:ok, socket |> assign(:payment_form, nil) |> load_prescription(id)}
+  end
+
+  def handle_params(params, _url, socket) do
+    {:noreply, apply_action(socket, socket.assigns.live_action, params)}
+  end
+
+  defp apply_action(socket, :new_payment, _params) do
+    prescription = socket.assigns.prescription
+
+    changeset =
+      Payment.changeset(%Payment{}, %{
+        "prescription_id" => prescription.id,
+        "amount" => prescription.total_amount
+      })
+
+    assign(socket, payment_form: to_form(changeset, as: :payment))
+  end
+
+  defp apply_action(socket, _action, _params) do
+    assign(socket, payment_form: nil)
   end
 
   defp load_prescription(socket, id) do
@@ -33,6 +56,39 @@ defmodule ThamaniDawaWeb.PrescriptionLive.Show do
     |> assign(:patient, patient)
     |> assign(:items, items)
     |> assign(:stock_by_product_id, stock_by_product_id)
+  end
+
+  def handle_event("validate_payment", %{"payment" => attrs}, socket) do
+    prescription = socket.assigns.prescription
+
+    changeset =
+      attrs
+      |> Map.put("prescription_id", prescription.id)
+      |> then(&Payment.changeset(%Payment{}, &1))
+      |> Map.put(:action, :validate)
+
+    {:noreply, assign(socket, payment_form: to_form(changeset, as: :payment))}
+  end
+
+  def handle_event("save_payment", %{"payment" => attrs}, socket) do
+    organization_id = socket.assigns.current_scope.organization_id
+    prescription = socket.assigns.prescription
+
+    attrs = Map.put(attrs, "prescription_id", prescription.id)
+
+    with {:ok, payment} <- Payments.create_payment(organization_id, attrs),
+         {:ok, _completed} <- Payments.complete_payment(payment) do
+      {:noreply,
+       socket
+       |> put_flash(:info, "Payment recorded and completed.")
+       |> push_patch(to: ~p"/pharmacy/prescriptions/#{prescription.id}")}
+    else
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:noreply, assign(socket, payment_form: to_form(changeset, as: :payment))}
+
+      {:error, reason} when is_atom(reason) ->
+        {:noreply, put_flash(socket, :error, "Payment saved but could not be completed.")}
+    end
   end
 
   def handle_event("dispense", %{"item_id" => item_id, "quantity" => quantity}, socket) do
@@ -132,6 +188,46 @@ defmodule ThamaniDawaWeb.PrescriptionLive.Show do
       current_scope={@current_scope}
       current_path="/pharmacy/prescriptions"
     >
+      <.modal
+        :if={@live_action == :new_payment}
+        id="payment-modal"
+        show
+        on_cancel={JS.patch(~p"/pharmacy/prescriptions/#{@prescription.id}")}
+      >
+        <h2 class="mb-1 font-semibold text-slate-900">Record payment</h2>
+        <p class="mb-4 text-sm text-thamani-pewter">
+          Record and immediately complete a payment for this prescription.
+        </p>
+        <.form
+          for={@payment_form}
+          id="payment-form"
+          phx-submit="save_payment"
+          phx-change="validate_payment"
+        >
+          <.input
+            field={@payment_form[:payment_type]}
+            type="select"
+            label="Payment method"
+            options={PaymentMethods.all()}
+            prompt="Choose a method"
+            required
+          />
+          <.input
+            field={@payment_form[:amount]}
+            type="number"
+            label="Amount (KES)"
+            step="0.01"
+            min="0.01"
+            required
+          />
+          <.input field={@payment_form[:provider_reference]} label="Reference / receipt no." />
+          <div class="mt-4 flex gap-2">
+            <.button variant="primary" phx-disable-with="Saving…">Record payment</.button>
+            <.button patch={~p"/pharmacy/prescriptions/#{@prescription.id}"}>Cancel</.button>
+          </div>
+        </.form>
+      </.modal>
+
       <div id="prescription-show" class="space-y-5">
         <section
           id="prescription-overview"
@@ -169,12 +265,22 @@ defmodule ThamaniDawaWeb.PrescriptionLive.Show do
               </div>
             </div>
 
-            <.button
-              navigate={~p"/pharmacy/prescriptions"}
-              class="self-start gap-2 whitespace-nowrap"
-            >
-              <.icon name="hero-arrow-left" class="size-4" /> Back to prescriptions
-            </.button>
+            <div class="flex flex-col gap-2 self-start sm:flex-row">
+              <.button
+                :if={not @prescription.has_paid}
+                variant="primary"
+                patch={~p"/pharmacy/prescriptions/#{@prescription.id}/payments/new"}
+                class="gap-2 whitespace-nowrap"
+              >
+                <.icon name="hero-banknotes" class="size-4" /> Record payment
+              </.button>
+              <.button
+                navigate={~p"/pharmacy/prescriptions"}
+                class="gap-2 whitespace-nowrap"
+              >
+                <.icon name="hero-arrow-left" class="size-4" /> Back to prescriptions
+              </.button>
+            </div>
           </div>
 
           <dl class="grid grid-cols-2 border-t border-thamani-stone bg-thamani-canvas/70 lg:grid-cols-4">

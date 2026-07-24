@@ -1,163 +1,161 @@
 defmodule ThamaniDawa.StockTakes do
   @moduledoc """
-  Physical stock-take sessions: staff at a site count what's actually on the shelf against
-  what the system expects (`batches.remaining_quantity`), review variances, then finalize to
-  correct the recorded quantities. Scoped to one site per stock take and pre-populated from
-  every active batch there; finalizing flags — rather than overwrites — a batch that drifted
-  mid-count.
+  Organization- and site-scoped stock take sessions. A session collects one
+  auditable physical count per included batch, then finalises by setting each
+  batch's `remaining_quantity` to the counted value and recording who finalised
+  and when. Finalization is protected against concurrent double-calls via a
+  `FOR UPDATE` row-level lock on the session.
   """
 
   import Ecto.Query, warn: false
-  alias ThamaniDawa.Batches
+
+  alias ThamaniDawa.Batches.Batch
   alias ThamaniDawa.Repo
   alias ThamaniDawa.StockTakes.StockTake
-  alias ThamaniDawa.StockTakes.StockTakeEntry
+  alias ThamaniDawa.StockTakes.StockTakeItem
 
-  @doc "Lists an organization's stock takes, most recently started first."
+  @doc "Lists all stock takes for an organization."
   def list_stock_takes(organization_id) do
     Repo.all(
       from st in StockTake,
         where: st.organization_id == ^organization_id,
-        order_by: [desc: st.started_at]
+        order_by: [desc: st.inserted_at]
+    )
+  end
+
+  @doc "Lists stock takes for a specific site within an organization."
+  def list_stock_takes_for_site(organization_id, site_id) do
+    Repo.all(
+      from st in StockTake,
+        where: st.organization_id == ^organization_id,
+        where: st.site_id == ^site_id,
+        order_by: [desc: st.inserted_at]
     )
   end
 
   @doc """
-  Gets a single stock take scoped to an organization, preloaded with its entries (ordered by
-  id, i.e. count order). Raises if not found or not in this organization.
+  Gets a single stock take scoped to an organization, preloaded with items and
+  each item's batch. Raises if not found.
   """
   def get_stock_take!(organization_id, id) do
+    batch_query = from b in Batch, where: b.organization_id == ^organization_id
+
     StockTake
     |> Repo.get_by!(id: id, organization_id: organization_id)
-    |> Repo.preload(entries: from(e in StockTakeEntry, order_by: e.id))
+    |> Repo.preload(items: {from(i in StockTakeItem, order_by: i.id), batch: batch_query})
   end
 
-  @doc "Returns the organization's current in-progress (draft) stock take at a site, or nil."
-  def get_active_stock_take(organization_id, site_id) do
-    Repo.get_by(StockTake, organization_id: organization_id, site_id: site_id, status: :draft)
+  @doc "Returns a changeset for building or validating a stock take form."
+  def change_stock_take(%StockTake{} = stock_take, attrs \\ %{}) do
+    StockTake.changeset(stock_take, attrs)
   end
 
   @doc """
-  Starts a new stock take at a site: creates the header and one entry per active batch
-  currently at that site, snapshotting each batch's current `remaining_quantity` as the
-  entry's `expected_quantity`. Fails with a changeset error (via the site's unique-draft
-  index) if the site already has a stock take in progress.
+  Creates a new draft stock take for a site. `attrs` must include `site_id`
+  and `started_by_id`; `notes` is optional.
   """
-  def start_stock_take(organization_id, site_id, user_id, attrs \\ %{})
-      when is_integer(organization_id) and is_integer(site_id) and is_integer(user_id) do
-    now = DateTime.utc_now() |> DateTime.truncate(:second)
-
-    changeset =
-      %StockTake{}
-      |> StockTake.changeset(attrs)
-      |> Ecto.Changeset.put_change(:organization_id, organization_id)
-      |> Ecto.Changeset.put_change(:site_id, site_id)
-      |> Ecto.Changeset.put_change(:status, :draft)
-      |> Ecto.Changeset.put_change(:started_at, now)
-      |> Ecto.Changeset.put_change(:started_by_id, user_id)
-      |> StockTake.finish_changeset()
-
-    Repo.transaction(fn ->
-      case Repo.insert(changeset) do
-        {:ok, stock_take} ->
-          organization_id
-          |> Batches.list_active_batches_for_site(site_id)
-          |> Enum.each(&insert_entry!(stock_take, &1))
-
-          stock_take
-
-        {:error, changeset} ->
-          Repo.rollback(changeset)
-      end
-    end)
+  def create_stock_take(organization_id, attrs) when is_integer(organization_id) do
+    %StockTake{}
+    |> StockTake.changeset(attrs)
+    |> Ecto.Changeset.put_change(:organization_id, organization_id)
+    |> Repo.insert()
   end
 
-  defp insert_entry!(stock_take, batch) do
-    %StockTakeEntry{}
-    |> StockTakeEntry.changeset(%{
+  @doc """
+  Adds a batch to a draft stock take, snapshotting the current
+  `remaining_quantity` as `expected_quantity`. Returns
+  `{:error, :already_finalized}` if the session is no longer a draft.
+  """
+  def add_item(%StockTake{status: :finalized}, _batch), do: {:error, :already_finalized}
+
+  def add_item(%StockTake{} = stock_take, %Batch{} = batch) do
+    %StockTakeItem{}
+    |> StockTakeItem.create_changeset(%{
       stock_take_id: stock_take.id,
       batch_id: batch.id,
+      organization_id: stock_take.organization_id,
       expected_quantity: batch.remaining_quantity
     })
-    |> Ecto.Changeset.put_change(:organization_id, stock_take.organization_id)
-    |> Repo.insert!()
+    |> Repo.insert()
   end
 
   @doc """
-  Records (or updates) the counted quantity for an entry. Returns `{:error, :not_draft}`
-  without changing anything if the parent stock take has already been finalized.
+  Records the physical count for a stock take item, computing and storing the
+  variance. Returns `{:error, :already_finalized}` if the parent session is
+  finalized.
   """
-  def record_count(organization_id, entry_id, user_id, attrs) do
-    entry = Repo.get_by!(StockTakeEntry, id: entry_id, organization_id: organization_id)
-    stock_take = Repo.get!(StockTake, entry.stock_take_id)
+  def record_count(%StockTakeItem{} = item, counted_quantity, user_id, attrs \\ %{}) do
+    parent = Repo.get!(StockTake, item.stock_take_id)
 
-    if stock_take.status == :draft do
-      now = DateTime.utc_now() |> DateTime.truncate(:second)
-
-      entry
-      |> StockTakeEntry.count_changeset(attrs)
-      |> Ecto.Changeset.put_change(:counted_by_id, user_id)
-      |> Ecto.Changeset.put_change(:counted_at, now)
-      |> StockTakeEntry.finish_count_changeset()
+    if parent.status == :finalized do
+      {:error, :already_finalized}
+    else
+      item
+      |> StockTakeItem.count_changeset(
+        Map.merge(attrs, %{
+          "counted_quantity" => counted_quantity,
+          "counted_by_id" => user_id,
+          "counted_at" => DateTime.utc_now()
+        })
+      )
       |> Repo.update()
-    else
-      {:error, :not_draft}
     end
   end
 
   @doc """
-  Finalizes a stock take: applies each counted entry whose batch hasn't drifted since
-  counting began, and leaves any that have as an unapplied conflict for a follow-up recount.
-  The stock take itself always moves to `:completed`, whether or not every entry applied.
+  Finalizes a draft stock take in a single transaction:
 
-  Returns `{:ok, stock_take, %{applied: [entry_ids], conflicted: [entry_ids]}}`, or
-  `{:error, :not_draft}` if already finalized.
+  1. Locks the stock take row `FOR UPDATE` to prevent concurrent finalization.
+  2. Verifies the session is still a draft.
+  3. Ensures every item has a recorded count.
+  4. Sets each batch's `remaining_quantity` to the counted value (physical
+     count wins).
+  5. Marks the session as finalized, recording `finalized_by_id` and
+     `finalized_at`.
+
+  Returns `{:error, :already_finalized}` or `{:error, :uncounted_items}` on
+  the relevant guard failures.
   """
-  def finalize_stock_take(organization_id, id, user_id) do
-    stock_take = get_stock_take!(organization_id, id)
+  def finalize_stock_take(%StockTake{} = stock_take, user_id) do
+    Repo.transaction(fn ->
+      locked =
+        Repo.one!(
+          from st in StockTake,
+            where: st.id == ^stock_take.id,
+            where: st.organization_id == ^stock_take.organization_id,
+            lock: "FOR UPDATE"
+        )
 
-    if stock_take.status == :draft do
-      now = DateTime.utc_now() |> DateTime.truncate(:second)
+      if locked.status == :finalized do
+        Repo.rollback(:already_finalized)
+      end
 
-      {:ok, {completed, summary}} =
-        Repo.transaction(fn ->
-          results =
-            stock_take.entries
-            |> Enum.filter(&(&1.counted_quantity != nil))
-            |> Enum.map(&apply_entry(organization_id, &1))
+      items =
+        Repo.all(
+          from i in StockTakeItem,
+            where: i.stock_take_id == ^stock_take.id,
+            where: i.organization_id == ^stock_take.organization_id
+        )
 
-          {applied, conflicted} = Enum.split_with(results, &(&1.status == :applied))
+      if Enum.any?(items, &is_nil(&1.counted_quantity)) do
+        Repo.rollback(:uncounted_items)
+      end
 
-          completed =
-            stock_take
-            |> Ecto.Changeset.change()
-            |> Ecto.Changeset.put_change(:completed_by_id, user_id)
-            |> Ecto.Changeset.put_change(:completed_at, now)
-            |> StockTake.complete_changeset()
-            |> Repo.update!()
+      Enum.each(items, fn item ->
+        Batch
+        |> where([b], b.id == ^item.batch_id)
+        |> lock("FOR UPDATE")
+        |> Repo.one!()
+        |> Ecto.Changeset.change(remaining_quantity: item.counted_quantity)
+        |> Repo.update!()
+      end)
 
-          {completed,
-           %{
-             applied: Enum.map(applied, & &1.entry_id),
-             conflicted: Enum.map(conflicted, & &1.entry_id)
-           }}
-        end)
-
-      {:ok, completed, summary}
-    else
-      {:error, :not_draft}
-    end
-  end
-
-  defp apply_entry(organization_id, entry) do
-    batch = Batches.get_batch!(organization_id, entry.batch_id)
-
-    if batch.remaining_quantity == entry.expected_quantity do
-      {:ok, _batch} = Batches.set_remaining_quantity(batch, entry.counted_quantity)
-      entry |> StockTakeEntry.apply_changeset() |> Repo.update!()
-      %{entry_id: entry.id, status: :applied}
-    else
-      %{entry_id: entry.id, status: :conflicted}
-    end
+      locked
+      |> StockTake.finalize_changeset(%{
+        finalized_by_id: user_id,
+        finalized_at: DateTime.utc_now()
+      })
+      |> Repo.update!()
+    end)
   end
 end

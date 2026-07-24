@@ -21,6 +21,7 @@ defmodule ThamaniDawa.Batches.Batch do
     belongs_to :approver, ThamaniDawa.Accounts.User, foreign_key: :approver_id
 
     has_many :lab_consumable_usages, ThamaniDawa.LabOrders.LabConsumableUsage
+    has_many :stock_take_items, ThamaniDawa.StockTakes.StockTakeItem
 
     timestamps(type: :utc_datetime)
   end

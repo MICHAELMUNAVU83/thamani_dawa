@@ -4,14 +4,18 @@ defmodule ThamaniDawa.StockTakesFixtures do
   """
 
   alias ThamaniDawa.AccountsFixtures
+  alias ThamaniDawa.BatchesFixtures
   alias ThamaniDawa.OrganizationsFixtures
   alias ThamaniDawa.SitesFixtures
   alias ThamaniDawa.StockTakes
 
+  def valid_stock_take_attributes(attrs \\ %{}) do
+    Enum.into(attrs, %{notes: "Quarterly count #{System.unique_integer()}"})
+  end
+
   @doc """
-  Starts a stock take under a fresh organization/site/user unless given. Any batches already
-  at the given (or freshly-created) site become its entries, matching real `start_stock_take/4`
-  behavior — create batches at the site *before* calling this if entries are needed.
+  Creates a draft stock take. Lazily creates an organization, site, and user
+  unless supplied via `organization_id`, `site_id`, and `started_by_id`.
   """
   def stock_take_fixture(attrs \\ %{}) do
     {organization_id, attrs} =
@@ -24,12 +28,42 @@ defmodule ThamaniDawa.StockTakesFixtures do
         SitesFixtures.site_fixture(%{organization_id: organization_id}).id
       end)
 
-    {user_id, attrs} =
-      Map.pop_lazy(attrs, :user_id, fn ->
+    {started_by_id, attrs} =
+      Map.pop_lazy(attrs, :started_by_id, fn ->
         AccountsFixtures.user_fixture(%{organization_id: organization_id}).id
       end)
 
-    {:ok, stock_take} = StockTakes.start_stock_take(organization_id, site_id, user_id, attrs)
-    StockTakes.get_stock_take!(organization_id, stock_take.id)
+    attrs = Map.merge(attrs, %{site_id: site_id, started_by_id: started_by_id})
+
+    {:ok, stock_take} =
+      attrs
+      |> valid_stock_take_attributes()
+      |> then(&StockTakes.create_stock_take(organization_id, &1))
+
+    stock_take
+  end
+
+  @doc """
+  Creates a stock take item (adds a batch to a stock take). Lazily creates
+  a stock take and a received batch unless supplied.
+  """
+  def stock_take_item_fixture(attrs \\ %{}) do
+    {organization_id, attrs} =
+      Map.pop_lazy(attrs, :organization_id, fn ->
+        OrganizationsFixtures.organization_fixture().id
+      end)
+
+    {stock_take, attrs} =
+      Map.pop_lazy(attrs, :stock_take, fn ->
+        stock_take_fixture(%{organization_id: organization_id})
+      end)
+
+    {batch, _attrs} =
+      Map.pop_lazy(attrs, :batch, fn ->
+        BatchesFixtures.batch_fixture(%{organization_id: organization_id})
+      end)
+
+    {:ok, item} = StockTakes.add_item(stock_take, batch)
+    item
   end
 end
