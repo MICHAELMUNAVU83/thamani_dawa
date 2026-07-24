@@ -135,6 +135,7 @@ defmodule ThamaniDawaWeb.Layouts do
         {"Dashboard", "hero-squares-2x2", ~p"/pharmacy"},
         {"Stock", "hero-cube", ~p"/pharmacy/stock"},
         {"Receive stock", "hero-arrow-down-tray", ~p"/pharmacy/receive-stock"},
+        {"Stock take", "hero-clipboard-document-check", ~p"/pharmacy/stock-takes"},
         {"Prescriptions", "hero-document-text", ~p"/pharmacy/prescriptions"},
         {"Scan", "hero-qr-code", ~p"/pharmacy/scan"}
       ]}
