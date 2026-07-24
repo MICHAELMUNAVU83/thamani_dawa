@@ -426,4 +426,60 @@ defmodule ThamaniDawaWeb.LabOrderLiveTest do
       assert html =~ expected
     end
   end
+
+  describe "payment modal" do
+    test "Record payment button opens the payment modal on the order show page", ctx do
+      lab_order = lab_order_fixture(%{organization_id: ctx.admin.organization_id})
+
+      conn = log_in_user(build_conn(), ctx.admin)
+
+      {:ok, lv, _html} = live(conn, ~p"/lab/orders/#{lab_order.id}/payments/new")
+
+      assert has_element?(lv, "#payment-modal")
+      assert render(lv) =~ "Record payment"
+    end
+
+    test "cancelling the modal patches back to the lab order", ctx do
+      lab_order = lab_order_fixture(%{organization_id: ctx.admin.organization_id})
+      conn = log_in_user(build_conn(), ctx.admin)
+
+      {:ok, lv, _html} = live(conn, ~p"/lab/orders/#{lab_order.id}/payments/new")
+
+      lv |> element("#payment-modal a", "Cancel") |> render_click()
+
+      assert_patch(lv, ~p"/lab/orders/#{lab_order.id}")
+      refute has_element?(lv, "#payment-modal")
+    end
+
+    test "validation error stays in the modal", ctx do
+      lab_order = lab_order_fixture(%{organization_id: ctx.admin.organization_id})
+      conn = log_in_user(build_conn(), ctx.admin)
+
+      {:ok, lv, _html} = live(conn, ~p"/lab/orders/#{lab_order.id}/payments/new")
+
+      html =
+        lv
+        |> form("#payment-form", payment: %{payment_type: "", amount: ""})
+        |> render_submit()
+
+      assert html =~ "can&#39;t be blank"
+      assert has_element?(lv, "#payment-modal")
+    end
+
+    test "successfully recording a payment closes the modal and shows a flash", ctx do
+      lab_order = lab_order_fixture(%{organization_id: ctx.admin.organization_id})
+      conn = log_in_user(build_conn(), ctx.admin)
+
+      {:ok, lv, _html} = live(conn, ~p"/lab/orders/#{lab_order.id}/payments/new")
+
+      lv
+      |> form("#payment-form",
+        payment: %{payment_type: "Cash", amount: "1200.00"}
+      )
+      |> render_submit()
+
+      assert_patch(lv, ~p"/lab/orders/#{lab_order.id}")
+      assert render(lv) =~ "Payment recorded and completed."
+    end
+  end
 end

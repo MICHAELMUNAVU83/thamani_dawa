@@ -53,7 +53,7 @@ defmodule ThamaniDawaWeb.LabReceiveStockLiveTest do
       assert html =~ "LAB-PENDING-001"
     end
 
-    test "View shows batch detail panel, Approve receipt marks batch active", %{
+    test "Receive link opens modal, approving receipt marks batch active", %{
       conn: conn,
       lab_tech: lab_tech,
       lab_site: lab_site,
@@ -70,25 +70,20 @@ defmodule ThamaniDawaWeb.LabReceiveStockLiveTest do
           pending: true
         })
 
-      {:ok, lv, _html} = live(log_in_user(conn, lab_tech), ~p"/lab/receive-stock")
-
-      # Click View — detail panel appears
-      lv
-      |> element("[phx-click='view_batch'][phx-value-id='#{pending.id}']")
-      |> render_click()
+      {:ok, lv, _html} =
+        live(log_in_user(conn, lab_tech), ~p"/lab/receive-stock/#{pending.id}/receive")
 
       html = render(lv)
-      assert html =~ "Review batch before receiving"
+      assert html =~ "Receive batch"
       assert html =~ "LAB-PENDING-002"
       assert html =~ "Lab Reagent X"
 
-      # Click Approve receipt — batch is activated
       lv
-      |> element("[phx-click='receive_batch'][phx-value-id='#{pending.id}']")
-      |> render_click()
+      |> form("#receive-batch-form", %{})
+      |> render_submit()
 
+      assert_patch(lv, ~p"/lab/receive-stock")
       assert render(lv) =~ "Batch received and marked active."
-      refute has_element?(lv, "#batch-review-panel")
 
       updated = ThamaniDawa.Batches.get_batch!(org_id, pending.id)
       assert updated.approver_id == lab_tech.id
@@ -177,7 +172,7 @@ defmodule ThamaniDawaWeb.LabReceiveStockLiveTest do
       assert has_element?(lv, "#pending-batches td", "—")
     end
 
-    test "review panel shows the serial when present", %{
+    test "receive modal shows the serial when present", %{
       conn: conn,
       lab_tech: lab_tech,
       lab_site: lab_site,
@@ -195,11 +190,8 @@ defmodule ThamaniDawaWeb.LabReceiveStockLiveTest do
           pending: true
         })
 
-      {:ok, lv, _html} = live(log_in_user(conn, lab_tech), ~p"/lab/receive-stock")
-
-      lv
-      |> element("[phx-click='view_batch'][phx-value-id='#{pending.id}']")
-      |> render_click()
+      {:ok, lv, _html} =
+        live(log_in_user(conn, lab_tech), ~p"/lab/receive-stock/#{pending.id}/receive")
 
       assert render(lv) =~ "SN-PANEL-1"
     end

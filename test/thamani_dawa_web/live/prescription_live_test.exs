@@ -973,4 +973,79 @@ defmodule ThamaniDawaWeb.PrescriptionLiveTest do
       assert html =~ "Female"
     end
   end
+
+  describe "payment modal" do
+    setup do
+      organization = organization_fixture()
+      site = site_fixture(%{organization_id: organization.id})
+      pharmacist = pharmacist_at_site(organization, site)
+      patient = patient_fixture(%{organization_id: organization.id})
+
+      visit =
+        patient_visit_fixture(%{
+          organization_id: organization.id,
+          patient_id: patient.id,
+          site_id: site.id
+        })
+
+      prescription =
+        prescription_fixture(%{organization_id: organization.id, patient_visit_id: visit.id})
+
+      %{
+        conn: log_in_user(build_conn(), pharmacist),
+        organization: organization,
+        prescription: prescription,
+        pharmacist: pharmacist
+      }
+    end
+
+    test "Record payment button opens the payment modal", ctx do
+      {:ok, lv, _html} = live(ctx.conn, ~p"/pharmacy/prescriptions/#{ctx.prescription.id}")
+
+      assert has_element?(lv, "a", "Record payment")
+
+      {:ok, lv, _html} =
+        live(ctx.conn, ~p"/pharmacy/prescriptions/#{ctx.prescription.id}/payments/new")
+
+      assert has_element?(lv, "#payment-modal")
+      assert render(lv) =~ "Record payment"
+    end
+
+    test "cancelling the modal patches back to the prescription", ctx do
+      {:ok, lv, _html} =
+        live(ctx.conn, ~p"/pharmacy/prescriptions/#{ctx.prescription.id}/payments/new")
+
+      lv |> element("#payment-modal a", "Cancel") |> render_click()
+
+      assert_patch(lv, ~p"/pharmacy/prescriptions/#{ctx.prescription.id}")
+      refute has_element?(lv, "#payment-modal")
+    end
+
+    test "validation error stays in the modal", ctx do
+      {:ok, lv, _html} =
+        live(ctx.conn, ~p"/pharmacy/prescriptions/#{ctx.prescription.id}/payments/new")
+
+      html =
+        lv
+        |> form("#payment-form", payment: %{payment_type: "", amount: ""})
+        |> render_submit()
+
+      assert html =~ "can&#39;t be blank"
+      assert has_element?(lv, "#payment-modal")
+    end
+
+    test "successfully recording a payment closes the modal and shows a flash", ctx do
+      {:ok, lv, _html} =
+        live(ctx.conn, ~p"/pharmacy/prescriptions/#{ctx.prescription.id}/payments/new")
+
+      lv
+      |> form("#payment-form",
+        payment: %{payment_type: "Cash", amount: "500.00"}
+      )
+      |> render_submit()
+
+      assert_patch(lv, ~p"/pharmacy/prescriptions/#{ctx.prescription.id}")
+      assert render(lv) =~ "Payment recorded and completed."
+    end
+  end
 end

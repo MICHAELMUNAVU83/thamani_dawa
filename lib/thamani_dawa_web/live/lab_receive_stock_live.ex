@@ -61,8 +61,32 @@ defmodule ThamaniDawaWeb.LabReceiveStockLive do
      |> assign(:raw_gs1, nil)
      |> assign(:gs1_decode_error, nil)
      |> assign(:selected_batch, nil)
+     |> assign(:receive_batch, nil)
+     |> assign(:receive_form, nil)
      |> assign(:usable_batches, usable_batches)
      |> stream(:pending_batches, pending_batches)}
+  end
+
+  def handle_params(%{"id" => id}, _url, socket) do
+    apply_action(socket, socket.assigns.live_action, id)
+  end
+
+  def handle_params(_params, _url, socket) do
+    {:noreply, assign(socket, receive_batch: nil, receive_form: nil)}
+  end
+
+  defp apply_action(socket, :receive, batch_id) do
+    scope = socket.assigns.current_scope
+    batch = Batches.get_batch!(scope.organization_id, batch_id)
+
+    {:noreply,
+     socket
+     |> assign(:receive_batch, batch)
+     |> assign(:receive_form, to_form(%{"quantity" => batch.quantity}, as: :receive))}
+  end
+
+  defp apply_action(socket, _action, _id) do
+    {:noreply, assign(socket, receive_batch: nil, receive_form: nil)}
   end
 
   def handle_event("view_batch", %{"id" => id}, socket) do
@@ -82,6 +106,22 @@ defmodule ThamaniDawaWeb.LabReceiveStockLive do
   def handle_event("receive_batch", %{"id" => id}, socket) do
     scope = socket.assigns.current_scope
     batch = Batches.get_batch!(scope.organization_id, String.to_integer(id))
+
+    if not Scope.admin?(scope) and scope.user.site_id != batch.site_id do
+      {:noreply, put_flash(socket, :error, "Not authorized to receive this batch.")}
+    else
+      do_receive_batch(socket, scope, batch)
+    end
+  end
+
+  def handle_event("receive", _params, socket)
+      when is_nil(socket.assigns.receive_batch) do
+    {:noreply, put_flash(socket, :error, "No batch selected.")}
+  end
+
+  def handle_event("receive", _params, socket) do
+    scope = socket.assigns.current_scope
+    batch = socket.assigns.receive_batch
 
     if not Scope.admin?(scope) and scope.user.site_id != batch.site_id do
       {:noreply, put_flash(socket, :error, "Not authorized to receive this batch.")}
@@ -187,8 +227,11 @@ defmodule ThamaniDawaWeb.LabReceiveStockLive do
          socket
          |> put_flash(:info, "Batch received and marked active.")
          |> assign(:selected_batch, nil)
+         |> assign(:receive_batch, nil)
+         |> assign(:receive_form, nil)
          |> reload_pending_batches(scope)
-         |> assign(:usable_batches, usable_batches)}
+         |> assign(:usable_batches, usable_batches)
+         |> push_patch(to: ~p"/lab/receive-stock")}
 
       {:error, _changeset} ->
         {:noreply, put_flash(socket, :error, "Could not receive batch.")}
@@ -270,6 +313,59 @@ defmodule ThamaniDawaWeb.LabReceiveStockLive do
     >
       <.header>Receive stock / consumables</.header>
 
+      <.modal
+        :if={@live_action == :receive and not is_nil(@receive_batch)}
+        id="receive-batch-modal"
+        show
+        on_cancel={JS.patch(~p"/lab/receive-stock")}
+      >
+        <h2 class="mb-1 font-semibold text-slate-900">Receive batch</h2>
+        <p class="mb-4 text-sm text-thamani-pewter">
+          Confirm receipt of this pending delivery.
+        </p>
+        <dl class="mb-4 grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+          <div>
+            <dt class="text-xs font-medium uppercase tracking-wide text-thamani-subtle">Product</dt>
+            <dd class="mt-0.5 font-medium text-slate-900">
+              {product_display(@receive_batch, @products_by_id)}
+            </dd>
+          </div>
+          <div>
+            <dt class="text-xs font-medium uppercase tracking-wide text-thamani-subtle">
+              Batch / lot
+            </dt>
+            <dd class="mt-0.5 font-mono">{@receive_batch.batch_no}</dd>
+          </div>
+          <div :if={@receive_batch.serial}>
+            <dt class="text-xs font-medium uppercase tracking-wide text-thamani-subtle">Serial</dt>
+            <dd class="mt-0.5 font-mono">{@receive_batch.serial}</dd>
+          </div>
+          <div :if={@receive_batch.manufacture_date}>
+            <dt class="text-xs font-medium uppercase tracking-wide text-thamani-subtle">
+              Manufacture date
+            </dt>
+            <dd class="mt-0.5">{@receive_batch.manufacture_date}</dd>
+          </div>
+          <div>
+            <dt class="text-xs font-medium uppercase tracking-wide text-thamani-subtle">Expiry</dt>
+            <dd class="mt-0.5">{@receive_batch.expiry_date}</dd>
+          </div>
+          <div>
+            <dt class="text-xs font-medium uppercase tracking-wide text-thamani-subtle">Quantity</dt>
+            <dd class="mt-0.5 tabular-nums">{@receive_batch.quantity}</dd>
+          </div>
+        </dl>
+        <.form
+          for={@receive_form}
+          id="receive-batch-form"
+          phx-submit="receive"
+          class="flex gap-2"
+        >
+          <.button variant="primary" phx-disable-with="Receiving…">Approve receipt</.button>
+          <.button patch={~p"/lab/receive-stock"}>Cancel</.button>
+        </.form>
+      </.modal>
+
       <div class="mb-8">
         <h2 class="text-base font-semibold mb-3">Pending deliveries</h2>
         <.table id="pending-batches" rows={@streams.pending_batches}>
@@ -283,7 +379,9 @@ defmodule ThamaniDawaWeb.LabReceiveStockLive do
             {supplier_display(batch, @suppliers_by_id)}
           </:col>
           <:action :let={{_id, batch}}>
-            <.button phx-click="view_batch" phx-value-id={batch.id}>View</.button>
+            <.link patch={~p"/lab/receive-stock/#{batch.id}/receive"} class="link">
+              Receive
+            </.link>
           </:action>
           <:empty_state>
             <.blank_state icon="hero-check-circle" title="Nothing pending delivery">
