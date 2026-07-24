@@ -8,7 +8,10 @@ defmodule ThamaniDawa.SuppliersFixtures do
 
   def valid_supplier_attributes(attrs \\ %{}) do
     Enum.into(attrs, %{
-      name: "Acme Distributors #{System.unique_integer()}"
+      name: "Acme Distributors #{System.unique_integer()}",
+      contact: "Jane Doe",
+      phone: "+254700000000",
+      email: "orders#{System.unique_integer([:positive])}@example.test"
     })
   end
 

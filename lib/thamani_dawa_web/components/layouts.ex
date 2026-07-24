@@ -133,6 +133,7 @@ defmodule ThamaniDawaWeb.Layouts do
       base_path="/pharmacy"
       nav_items={[
         {"Dashboard", "hero-squares-2x2", ~p"/pharmacy"},
+        {"Stock", "hero-cube", ~p"/pharmacy/stock"},
         {"Receive stock", "hero-arrow-down-tray", ~p"/pharmacy/receive-stock"},
         {"Prescriptions", "hero-document-text", ~p"/pharmacy/prescriptions"},
         {"Scan", "hero-qr-code", ~p"/pharmacy/scan"}
@@ -165,7 +166,8 @@ defmodule ThamaniDawaWeb.Layouts do
       nav_items={[
         {"Sites", "hero-building-office-2", ~p"/org/sites"},
         {"Team", "hero-user-group", ~p"/org/team"},
-        {"Products", "hero-cube", ~p"/org/products"}
+        {"Products", "hero-cube", ~p"/org/products"},
+        {"Suppliers", "hero-truck", ~p"/org/suppliers"}
       ]}
     >
       {render_slot(@inner_block)}
@@ -200,7 +202,7 @@ defmodule ThamaniDawaWeb.Layouts do
       <%!-- Sidebar --%>
       <aside
         id="sidebar-aside"
-        class="fixed inset-y-0 left-0 z-50 flex w-72 -translate-x-full shrink-0 flex-col border-r transition-[transform,width] duration-200 ease-in-out lg:relative lg:z-auto lg:translate-x-0"
+        class="fixed inset-y-0 left-0 z-50 flex w-72 -translate-x-full shrink-0 flex-col border-r transition-[transform,width] duration-200 ease-in-out lg:relative lg:translate-x-0"
         style="background: var(--thamani-snow); border-color: var(--thamani-border-nav); width: 288px; padding: 24px 20px;"
         aria-label={"#{@section_label} navigation"}
       >

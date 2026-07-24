@@ -26,4 +26,16 @@ defmodule ThamaniDawa.Suppliers do
     |> Ecto.Changeset.put_change(:organization_id, organization_id)
     |> Repo.insert()
   end
+
+  @doc "Updates a supplier."
+  def update_supplier(%Supplier{} = supplier, attrs) do
+    supplier
+    |> Supplier.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc "Returns a changeset for the given supplier."
+  def change_supplier(supplier_or_changeset, attrs \\ %{}) do
+    Supplier.changeset(supplier_or_changeset, attrs)
+  end
 end
