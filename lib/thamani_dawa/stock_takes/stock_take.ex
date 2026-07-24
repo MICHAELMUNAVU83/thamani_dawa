@@ -35,6 +35,7 @@ defmodule ThamaniDawa.StockTakes.StockTake do
     stock_take
     |> cast(attrs, [:finalized_by_id, :finalized_at])
     |> validate_required([:finalized_by_id, :finalized_at])
+    |> foreign_key_constraint(:finalized_by_id)
     |> put_change(:status, :finalized)
   end
 end
