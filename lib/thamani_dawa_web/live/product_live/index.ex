@@ -132,6 +132,18 @@ defmodule ThamaniDawaWeb.ProductLive.Index do
     {:noreply, assign(socket, :gtin_lookup, {:error, :provider_error})}
   end
 
+  def handle_event("toggle_active", %{"id" => id}, socket) do
+    organization_id = socket.assigns.current_scope.organization_id
+    product = Products.get_product!(organization_id, id)
+
+    case Products.update_product(product, %{is_active: !product.is_active}) do
+      {:ok, _updated} ->
+        {:noreply, reload_products(socket)}
+
+      {:error, _changeset} ->
+        {:noreply, put_flash(socket, :error, "Could not update product.")}
+    end
+  end
   defp save_product(socket, :new, attrs) do
     organization_id = socket.assigns.current_scope.organization_id
 
@@ -405,6 +417,7 @@ defmodule ThamaniDawaWeb.ProductLive.Index do
             <.input field={@form[:is_otc]} type="checkbox" label="Over-the-counter" />
             <.input field={@form[:is_dangerous_drug]} type="checkbox" label="Dangerous drug" />
             <.input field={@form[:reorder_level]} type="number" label="Reorder level" />
+            <.input field={@form[:is_active]} type="checkbox" label="Active" />
             <div class="flex gap-2 mt-2">
               <.button variant="primary">Save</.button>
               <.button patch={~p"/org/products"}>Cancel</.button>
@@ -421,8 +434,16 @@ defmodule ThamaniDawaWeb.ProductLive.Index do
         <:col :let={{_id, product}} label="Name">{product_name(product)}</:col>
         <:col :let={{_id, product}} label="Category">{product.category}</:col>
         <:col :let={{_id, product}} label="GTIN">{product.gtin}</:col>
+        <:col :let={{_id, product}} label="Status">
+          <.status_badge status={if product.is_active, do: :active, else: :inactive} />
+        </:col>
         <:action :let={{_id, product}}>
           <.link patch={~p"/org/products/#{product.id}/edit"} class="link">Edit</.link>
+        </:action>
+        <:action :let={{_id, product}}>
+          <.button type="button" phx-click="toggle_active" phx-value-id={product.id}>
+            {if product.is_active, do: "Deactivate", else: "Reactivate"}
+          </.button>
         </:action>
         <:empty_state>
           <.blank_state

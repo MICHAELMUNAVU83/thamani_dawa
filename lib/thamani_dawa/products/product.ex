@@ -13,6 +13,7 @@ defmodule ThamaniDawa.Products.Product do
     field :is_dangerous_drug, :boolean, default: false
     field :reorder_level, :integer
     field :price, :integer
+    field :is_active, :boolean, default: true
 
     belongs_to :organization, ThamaniDawa.Organizations.Organization
 
@@ -35,7 +36,8 @@ defmodule ThamaniDawa.Products.Product do
       :is_otc,
       :is_dangerous_drug,
       :reorder_level,
-      :price
+      :price,
+      :is_active
     ])
     |> validate_required([:price, :uom, :gtin])
     |> validate_number(:price, greater_than_or_equal_to: 0)
