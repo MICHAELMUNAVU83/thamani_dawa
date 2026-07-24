@@ -138,8 +138,10 @@ defmodule ThamaniDawa.StockTakes do
       end
 
       Enum.each(items, fn item ->
-        item.batch_id
-        |> then(&Repo.get!(Batch, &1))
+        Batch
+        |> where([b], b.id == ^item.batch_id)
+        |> lock("FOR UPDATE")
+        |> Repo.one!()
         |> Ecto.Changeset.change(remaining_quantity: item.counted_quantity)
         |> Repo.update!()
       end)
