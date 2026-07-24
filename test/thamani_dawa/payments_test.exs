@@ -116,6 +116,19 @@ defmodule ThamaniDawa.PaymentsTest do
                errors_on(changeset)
     end
 
+    test "accepts an explicit nil for the unused order reference" do
+      organization = organization_fixture()
+      lab_order = lab_order_fixture(%{organization_id: organization.id})
+
+      assert {:ok, %Payment{order_type: :lab_order}} =
+               Payments.create_payment(organization.id, %{
+                 lab_order_id: lab_order.id,
+                 prescription_id: nil,
+                 amount: Decimal.new("100"),
+                 payment_type: "Cash"
+               })
+    end
+
     test "rejects a lab_order_id belonging to a different organization" do
       organization = organization_fixture()
       other_org = organization_fixture()
