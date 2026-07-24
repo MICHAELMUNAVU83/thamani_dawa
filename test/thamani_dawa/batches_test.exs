@@ -205,6 +205,25 @@ defmodule ThamaniDawa.BatchesTest do
       assert is_nil(batch.supplier_id)
     end
 
+    test "accepts a blank-string supplier_id, matching a form select's 'no supplier' option" do
+      organization = organization_fixture()
+      product = product_fixture(%{organization_id: organization.id})
+      site = site_fixture(%{organization_id: organization.id})
+
+      assert {:ok, batch} =
+               Batches.create_batch(organization.id, %{
+                 "product_id" => to_string(product.id),
+                 "site_id" => to_string(site.id),
+                 "supplier_id" => "",
+                 "gtin" => "00614141000012",
+                 "batch_no" => "LOT-BLANK-SUPPLIER",
+                 "expiry_date" => "2027-01-01",
+                 "quantity" => "10"
+               })
+
+      assert is_nil(batch.supplier_id)
+    end
+
     test "rejects a gtin that fails the GS1 check digit" do
       organization = organization_fixture()
       product = product_fixture(%{organization_id: organization.id})
