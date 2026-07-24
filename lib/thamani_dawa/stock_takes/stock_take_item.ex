@@ -19,7 +19,7 @@ defmodule ThamaniDawa.StockTakes.StockTakeItem do
     belongs_to :batch, Batch
     belongs_to :counted_by, User, foreign_key: :counted_by_id
 
-    timestamps()
+    timestamps(type: :utc_datetime)
   end
 
   @doc "Changeset for adding a batch to a stock take session."

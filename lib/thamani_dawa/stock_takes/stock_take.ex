@@ -18,7 +18,7 @@ defmodule ThamaniDawa.StockTakes.StockTake do
     belongs_to :finalized_by, User, foreign_key: :finalized_by_id
     has_many :items, StockTakeItem, foreign_key: :stock_take_id
 
-    timestamps()
+    timestamps(type: :utc_datetime)
   end
 
   @doc "Changeset for creating a new draft stock take."
@@ -26,6 +26,8 @@ defmodule ThamaniDawa.StockTakes.StockTake do
     stock_take
     |> cast(attrs, [:site_id, :started_by_id, :notes])
     |> validate_required([:site_id, :started_by_id])
+    |> foreign_key_constraint(:site_id)
+    |> foreign_key_constraint(:started_by_id)
   end
 
   @doc "Changeset applied when a draft is finalized."

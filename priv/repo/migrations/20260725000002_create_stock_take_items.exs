@@ -13,7 +13,7 @@ defmodule ThamaniDawa.Repo.Migrations.CreateStockTakeItems do
       add :counted_at, :utc_datetime
       add :notes, :text
 
-      timestamps()
+      timestamps(type: :utc_datetime)
     end
 
     create index(:stock_take_items, [:organization_id])

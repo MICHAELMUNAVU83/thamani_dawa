@@ -11,7 +11,7 @@ defmodule ThamaniDawa.Repo.Migrations.CreateStockTakes do
       add :finalized_by_id, references(:users, on_delete: :restrict)
       add :finalized_at, :utc_datetime
 
-      timestamps()
+      timestamps(type: :utc_datetime)
     end
 
     create index(:stock_takes, [:organization_id])
