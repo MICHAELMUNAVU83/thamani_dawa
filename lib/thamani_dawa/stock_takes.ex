@@ -131,7 +131,11 @@ defmodule ThamaniDawa.StockTakes do
       end
 
       items =
-        Repo.all(from i in StockTakeItem, where: i.stock_take_id == ^stock_take.id)
+        Repo.all(
+          from i in StockTakeItem,
+            where: i.stock_take_id == ^stock_take.id,
+            where: i.organization_id == ^stock_take.organization_id
+        )
 
       if Enum.any?(items, &is_nil(&1.counted_quantity)) do
         Repo.rollback(:uncounted_items)

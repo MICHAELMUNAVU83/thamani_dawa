@@ -77,7 +77,7 @@ defmodule ThamaniDawaWeb.LabReceiveStockLive do
 
   defp apply_action(socket, :receive, batch_id) do
     scope = socket.assigns.current_scope
-    batch = Batches.get_batch!(scope.organization_id, batch_id)
+    batch = Batches.get_batch!(scope.organization_id, String.to_integer(batch_id))
 
     {:noreply,
      socket
